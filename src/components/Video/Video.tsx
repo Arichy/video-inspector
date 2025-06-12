@@ -197,21 +197,21 @@ export default function Video({
                     {metadata.file_path.split(/[\\/]/).pop()}
                   </h3>
 
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-700 text-sm">
-                    <div className="flex">
-                      <span className="font-medium w-16">{t('metadata.resolution')}:</span>
+                  <div className="space-y-2 text-gray-700 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium">{t('metadata.resolution')}:</span>
                       <span className="text-gray-600">{metadata.resolution}</span>
                     </div>
-                    <div className="flex">
-                      <span className="font-medium w-16">{t('metadata.frameRate')}:</span>
+                    <div className="flex justify-between">
+                      <span className="font-medium">{t('metadata.frameRate')}:</span>
                       <span className="text-gray-600">{metadata.frame_rate} {t('metadata.fps')}</span>
                     </div>
-                    <div className="flex">
-                      <span className="font-medium w-16">{t('metadata.duration')}:</span>
+                    <div className="flex justify-between">
+                      <span className="font-medium">{t('metadata.duration')}:</span>
                       <span className="text-gray-600">{metadata.duration}</span>
                     </div>
-                    <div className="flex">
-                      <span className="font-medium w-16">{t('metadata.bitRate')}:</span>
+                    <div className="flex justify-between">
+                      <span className="font-medium">{t('metadata.bitRate')}:</span>
                       <span className="text-gray-600">{metadata.bit_rate}</span>
                     </div>
                   </div>

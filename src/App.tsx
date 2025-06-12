@@ -7,6 +7,7 @@ import Video from './components/Video/Video';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
+import { toast, ToastContainer } from 'react-toastify';
 
 function App() {
   const { t } = useTranslation();
@@ -33,24 +34,8 @@ function App() {
     });
   }, []);
 
-  const handleFileDrop = useCallback(
+  const processFile = useCallback(
     async (file: string) => {
-      // check if is processing
-      console.log(files);
-      if (files.includes(file)) {
-        if (metadataMap[file]) {
-          console.log(t('errors.fileAlreadyProcessed'), file);
-          return;
-        }
-        // If file is already in the processing list, return directly
-
-        console.warn(t('errors.fileBeingProcessed'), file);
-        return;
-      }
-
-      console.log('File dropped:', file);
-      addFile(file);
-
       try {
         const result = await invoke<VideoMetadata>('get_video_metadata', { path: file });
 
@@ -61,13 +46,46 @@ function App() {
         }));
       } catch (error) {
         console.error('Error getting video metadata:', error);
+        // Show error toast
+        toast.error(t('errors.videoProcessingFailed'), {
+          autoClose: 2000,
+        });
         setErrorMap(prevMap => ({
           ...prevMap,
           [file]: (error as string) || t('errors.unknownError'),
         }));
       }
     },
-    [addFile, files, metadataMap, t]
+    [t]
+  );
+
+  const handleFileDrop = useCallback(
+    async (file: string) => {
+      // check if is processing
+      console.log(files);
+      if (files.includes(file)) {
+        if (metadataMap[file]) {
+          toast.warn(t('errors.fileAlreadyProcessed'), {
+            autoClose: 2000,
+          });
+          console.log(t('errors.fileAlreadyProcessed'), file);
+          return;
+        }
+        // If file is already in the processing list, return directly
+
+        toast.warn(t('errors.fileBeingProcessed'), {
+          autoClose: 2000,
+        });
+        console.warn(t('errors.fileBeingProcessed'), file);
+        return;
+      }
+
+      console.log('File dropped:', file);
+      addFile(file);
+
+      await processFile(file);
+    },
+    [addFile, files, metadataMap, processFile, t]
   );
 
   const unlistenRef = React.useRef<() => void>();
@@ -135,25 +153,12 @@ function App() {
     });
 
     // Reprocess the file
-    try {
-      const result = await invoke<VideoMetadata>('get_video_metadata', { path: filePath });
-
-      console.log('Video metadata retry result:', result);
-      setMetadataMap(prevMap => ({
-        ...prevMap,
-        [filePath]: result,
-      }));
-    } catch (error) {
-      console.error('Error retrying video metadata:', error);
-      setErrorMap(prevMap => ({
-        ...prevMap,
-        [filePath]: (error as string) || t('errors.unknownError'),
-      }));
-    }
+    await processFile(filePath);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
+      <ToastContainer />
       <LanguageSwitcher />
       <div className="container mx-auto max-w-6xl">
         <header className="mb-8 text-center">
@@ -172,7 +177,7 @@ function App() {
           onClick={() => {
             open({
               multiple: false,
-              filters: [{ name: t('fileDialog.videoFiles'), extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv'] }],
+              filters: [{ name: t('fileDialog.videoFiles'), extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'm4v'] }],
             }).then(selectedFile => {
               if (selectedFile) {
                 handleFileDrop(selectedFile);
@@ -204,7 +209,9 @@ function App() {
         {/* Video card grid */}
         {files.length > 0 && (
           <div className="mt-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">{t('video.processedVideos')} ({files.length})</h2>
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">
+              {t('video.processedVideos')} ({files.length})
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {files.map(file => (
                 <div

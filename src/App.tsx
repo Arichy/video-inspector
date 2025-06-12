@@ -113,23 +113,7 @@ function App() {
     })();
   }, [handleFileDrop, t]);
 
-  // Prevent browser's default file opening behavior
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.currentTarget.classList.add('bg-blue-100', 'border-blue-400');
-  };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.currentTarget.classList.remove('bg-blue-100', 'border-blue-400');
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.currentTarget.classList.remove('bg-blue-100', 'border-blue-400');
-    console.log('Drop event in React:', e);
-    // onDrop is already handled by Tauri events, this is only for visual feedback
-  };
 
   // Handle video deletion
   const handleDeleteVideo = (filePath: string) => {
@@ -166,44 +150,42 @@ function App() {
           <p className="text-gray-600">{t('app.subtitle')}</p>
         </header>
 
-        {/* Main drop zone */}
-        <div
-          className="border-2 border-dashed border-blue-300 rounded-lg p-8 mb-10 bg-blue-50
-                    flex flex-col items-center justify-center cursor-pointer
-                    transition-colors duration-300 hover:bg-blue-100 hover:border-blue-400"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => {
-            open({
-              multiple: false,
-              filters: [{ name: t('fileDialog.videoFiles'), extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'm4v'] }],
-            }).then(selectedFile => {
-              if (selectedFile) {
-                handleFileDrop(selectedFile);
-              } else {
-                console.warn(t('errors.noFileSelected'));
-              }
-            });
-          }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-16 w-16 text-blue-500 mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {/* Upload section */}
+        <div className="text-center mb-8">
+          <button
+            onClick={() => {
+              open({
+                multiple: false,
+                filters: [{ name: t('fileDialog.videoFiles'), extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'm4v'] }],
+              }).then(selectedFile => {
+                if (selectedFile) {
+                  handleFileDrop(selectedFile);
+                } else {
+                  console.warn(t('errors.noFileSelected'));
+                }
+              });
+            }}
+            className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-colors duration-200"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            />
-          </svg>
-          <h2 className="text-xl font-semibold text-blue-700 mb-2">{t('dropzone.title')}</h2>
-          <p className="text-blue-600 text-sm max-w-md text-center">{t('dropzone.subtitle')}</p>
-          <p className="mt-2 text-blue-500 text-sm">{t('dropzone.clickToSelect')}</p>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+            {t('upload.selectFile')}
+          </button>
+          <p className="mt-3 text-gray-600 text-sm">
+            {t('upload.dragDropHint')}
+          </p>
         </div>
 
         {/* Video card grid */}

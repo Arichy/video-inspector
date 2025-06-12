@@ -39,5 +39,9 @@
     "switchLanguage": "Switch Language",
     "chinese": "中文",
     "english": "English"
+  },
+  "upload": {
+    "selectFile": "Select Video File",
+    "dragDropHint": "You can also drag and drop video files anywhere in this window"
   }
 }

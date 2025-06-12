@@ -39,5 +39,9 @@
     "switchLanguage": "切换语言",
     "chinese": "中文",
     "english": "English"
+  },
+  "upload": {
+    "selectFile": "选择视频文件",
+    "dragDropHint": "您也可以将视频文件拖拽到窗口的任意位置"
   }
 }

@@ -5,8 +5,11 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 import type { VideoMetadata } from './types';
 import Video from './components/Video/Video';
 import { open } from '@tauri-apps/plugin-dialog';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
 
 function App() {
+  const { t } = useTranslation();
   const [files, setFiles] = useState<string[]>([]);
   const [metadataMap, setMetadataMap] = useState<Record<string, VideoMetadata>>({});
   const [errorMap, setErrorMap] = useState<Record<string, string>>({});
@@ -36,12 +39,12 @@ function App() {
       console.log(files);
       if (files.includes(file)) {
         if (metadataMap[file]) {
-          console.log('File already processed:', file);
+          console.log(t('errors.fileAlreadyProcessed'), file);
           return;
         }
         // 如果文件已经在处理列表中，直接返回
 
-        console.warn('File is being processed:', file);
+        console.warn(t('errors.fileBeingProcessed'), file);
         return;
       }
 
@@ -60,11 +63,11 @@ function App() {
         console.error('Error getting video metadata:', error);
         setErrorMap(prevMap => ({
           ...prevMap,
-          [file]: (error as string) || '未知错误',
+          [file]: (error as string) || t('errors.unknownError'),
         }));
       }
     },
-    [addFile, files, metadataMap]
+    [addFile, files, metadataMap, t]
   );
 
   const unlistenRef = React.useRef<() => void>();
@@ -80,7 +83,7 @@ function App() {
           if (event.payload.paths && event.payload.paths.length > 0) {
             handleFileDrop(event.payload.paths[0]);
           } else {
-            console.warn('No files dropped in webview drag drop event');
+            console.warn(t('errors.noFilesDropped'));
           }
         })
         .then(unlisten => {
@@ -90,7 +93,7 @@ function App() {
           unlistenRef.current = unlisten;
         });
     })();
-  }, [handleFileDrop]);
+  }, [handleFileDrop, t]);
 
   // 防止浏览器默认的文件打开行为
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -144,17 +147,18 @@ function App() {
       console.error('Error retrying video metadata:', error);
       setErrorMap(prevMap => ({
         ...prevMap,
-        [filePath]: (error as string) || '未知错误',
+        [filePath]: (error as string) || t('errors.unknownError'),
       }));
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
+      <LanguageSwitcher />
       <div className="container mx-auto max-w-6xl">
         <header className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">🎬 视频信息提取器</h1>
-          <p className="text-gray-600">拖放视频文件到此应用，即可查看视频的详细信息</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">{t('app.title')}</h1>
+          <p className="text-gray-600">{t('app.subtitle')}</p>
         </header>
 
         {/* 主拖放区 */}
@@ -168,12 +172,12 @@ function App() {
           onClick={() => {
             open({
               multiple: false,
-              filters: [{ name: '视频文件', extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv'] }],
+              filters: [{ name: t('fileDialog.videoFiles'), extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv'] }],
             }).then(selectedFile => {
               if (selectedFile) {
                 handleFileDrop(selectedFile);
               } else {
-                console.warn('No file selected');
+                console.warn(t('errors.noFileSelected'));
               }
             });
           }}
@@ -192,15 +196,15 @@ function App() {
               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
             />
           </svg>
-          <h2 className="text-xl font-semibold text-blue-700 mb-2">将视频文件拖放到这里</h2>
-          <p className="text-blue-600 text-sm max-w-md text-center">支持多种视频格式，包括 MP4、AVI、MOV 等</p>
-          <p className="mt-2 text-blue-500 text-sm">或点击此处选择文件</p>
+          <h2 className="text-xl font-semibold text-blue-700 mb-2">{t('dropzone.title')}</h2>
+          <p className="text-blue-600 text-sm max-w-md text-center">{t('dropzone.subtitle')}</p>
+          <p className="mt-2 text-blue-500 text-sm">{t('dropzone.clickToSelect')}</p>
         </div>
 
         {/* 视频卡片网格 */}
         {files.length > 0 && (
           <div className="mt-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">处理的视频 ({files.length})</h2>
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">{t('video.processedVideos')} ({files.length})</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {files.map(file => (
                 <div
@@ -237,7 +241,7 @@ function App() {
                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
               />
             </svg>
-            <p>还没有处理任何视频文件</p>
+            <p>{t('video.noVideosYet')}</p>
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import type { VideoMetadata } from '@/types';
+import { useTranslation } from 'react-i18next';
 
 export default function Video({
   path,
@@ -13,6 +14,7 @@ export default function Video({
   onDelete?: () => void;
   onRetry?: (filePath: string) => void; // 如果需要重试功能，可以传入文件路径
 }) {
+  const { t } = useTranslation();
   // 固定使用16:9的比例，不再需要动态计算
   const aspectRatio = '16/9';
 
@@ -25,7 +27,7 @@ export default function Video({
           <button
             onClick={onDelete}
             className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition-colors duration-200 cursor-pointer"
-            title="删除视频"
+            title={t('video.deleteVideo')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -54,14 +56,14 @@ export default function Video({
           />
         </svg>
         <h2>{path}</h2>
-        <h2 className="text-xl font-bold text-red-700 mb-2">处理错误</h2>
+        <h2 className="text-xl font-bold text-red-700 mb-2">{t('video.processingError')}</h2>
         <p className="text-red-600 mb-4">{error}</p>
 
         {onRetry && path && (
           <button
             onClick={() => onRetry(path)}
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors duration-200"
-            title="重试处理"
+            title={t('video.retryProcessing')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -77,7 +79,7 @@ export default function Video({
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            重试
+            {t('video.retry')}
           </button>
         )}
       </div>
@@ -122,7 +124,7 @@ export default function Video({
               <button
                 onClick={onDelete}
                 className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition-colors duration-200 cursor-pointer"
-                title="删除视频"
+                title={t('video.deleteVideo')}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -153,7 +155,7 @@ export default function Video({
                       d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <h3 className="font-bold text-lg">文件处理失败</h3>
+                  <h3 className="font-bold text-lg">{t('video.fileProcessingFailed')}</h3>
                 </div>
                 <p className="mb-2 truncate">{metadata.file_path}</p>
                 <p className="mb-4 text-sm text-red-600">{metadata.error}</p>
@@ -162,7 +164,7 @@ export default function Video({
                   <button
                     onClick={() => onRetry(metadata.file_path)}
                     className="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded flex items-center justify-center transition-colors duration-200 mt-2"
-                    title="重试处理"
+                    title={t('video.retryProcessing')}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -178,7 +180,7 @@ export default function Video({
                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                       />
                     </svg>
-                    重试
+                    {t('video.retry')}
                   </button>
                 )}
               </div>
@@ -186,7 +188,7 @@ export default function Video({
               <div className="flex flex-col">
                 {/* 缩略图区域 - 固定16:9比例 */}
                 <div className="w-full bg-black flex items-center justify-center" style={{ aspectRatio }}>
-                  <img src={metadata.thumbnail_base64} alt="视频缩略图" className="w-full h-full object-contain" />
+                  <img src={metadata.thumbnail_base64} alt={t('video.thumbnail')} className="w-full h-full object-contain" />
                 </div>
 
                 {/* 信息区 */}
@@ -197,19 +199,19 @@ export default function Video({
 
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-700 text-sm">
                     <div className="flex">
-                      <span className="font-medium w-16">分辨率:</span>
+                      <span className="font-medium w-16">{t('metadata.resolution')}:</span>
                       <span className="text-gray-600">{metadata.resolution}</span>
                     </div>
                     <div className="flex">
-                      <span className="font-medium w-16">帧率:</span>
-                      <span className="text-gray-600">{metadata.frame_rate} fps</span>
+                      <span className="font-medium w-16">{t('metadata.frameRate')}:</span>
+                      <span className="text-gray-600">{metadata.frame_rate} {t('metadata.fps')}</span>
                     </div>
                     <div className="flex">
-                      <span className="font-medium w-16">时长:</span>
+                      <span className="font-medium w-16">{t('metadata.duration')}:</span>
                       <span className="text-gray-600">{metadata.duration}</span>
                     </div>
                     <div className="flex">
-                      <span className="font-medium w-16">码率:</span>
+                      <span className="font-medium w-16">{t('metadata.bitRate')}:</span>
                       <span className="text-gray-600">{metadata.bit_rate}</span>
                     </div>
                   </div>

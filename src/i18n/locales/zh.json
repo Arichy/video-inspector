@@ -1,0 +1,43 @@
+{
+  "app": {
+    "title": "🎬 视频信息提取器",
+    "subtitle": "拖放视频文件到此应用，即可查看视频的详细信息"
+  },
+  "dropzone": {
+    "title": "将视频文件拖放到这里",
+    "subtitle": "支持多种视频格式，包括 MP4、AVI、MOV 等",
+    "clickToSelect": "或点击此处选择文件"
+  },
+  "video": {
+    "processedVideos": "处理的视频",
+    "noVideosYet": "还没有处理任何视频文件",
+    "deleteVideo": "删除视频",
+    "retryProcessing": "重试处理",
+    "retry": "重试",
+    "processingError": "处理错误",
+    "fileProcessingFailed": "文件处理失败",
+    "thumbnail": "视频缩略图"
+  },
+  "metadata": {
+    "resolution": "分辨率",
+    "frameRate": "帧率",
+    "duration": "时长",
+    "bitRate": "码率",
+    "fps": "fps"
+  },
+  "errors": {
+    "unknownError": "未知错误",
+    "fileAlreadyProcessed": "文件已经处理过了",
+    "fileBeingProcessed": "文件正在处理中",
+    "noFileSelected": "没有选择文件",
+    "noFilesDropped": "拖拽事件中没有文件"
+  },
+  "fileDialog": {
+    "videoFiles": "视频文件"
+  },
+  "language": {
+    "switchLanguage": "切换语言",
+    "chinese": "中文",
+    "english": "English"
+  }
+}

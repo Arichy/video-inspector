@@ -1,0 +1,43 @@
+{
+  "app": {
+    "title": "🎬 Video Metadata Inspector",
+    "subtitle": "Drag and drop video files to this app to view detailed video information"
+  },
+  "dropzone": {
+    "title": "Drag video files here",
+    "subtitle": "Supports various video formats including MP4, AVI, MOV, etc.",
+    "clickToSelect": "or click here to select files"
+  },
+  "video": {
+    "processedVideos": "Processed Videos",
+    "noVideosYet": "No video files processed yet",
+    "deleteVideo": "Delete video",
+    "retryProcessing": "Retry processing",
+    "retry": "Retry",
+    "processingError": "Processing Error",
+    "fileProcessingFailed": "File Processing Failed",
+    "thumbnail": "Video thumbnail"
+  },
+  "metadata": {
+    "resolution": "Resolution",
+    "frameRate": "Frame Rate",
+    "duration": "Duration",
+    "bitRate": "Bit Rate",
+    "fps": "fps"
+  },
+  "errors": {
+    "unknownError": "Unknown error",
+    "fileAlreadyProcessed": "File already processed",
+    "fileBeingProcessed": "File is being processed",
+    "noFileSelected": "No file selected",
+    "noFilesDropped": "No files dropped in webview drag drop event"
+  },
+  "fileDialog": {
+    "videoFiles": "Video Files"
+  },
+  "language": {
+    "switchLanguage": "Switch Language",
+    "chinese": "中文",
+    "english": "English"
+  }
+}

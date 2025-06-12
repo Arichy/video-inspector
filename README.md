@@ -2,7 +2,9 @@
 
 A desktop application built with Tauri + React for quickly viewing video file metadata and thumbnails.
 
-_[中文文档](README.zh-CN.md)_
+[中文文档](README.zh-CN.md)
+
+![Preview](./imgs/preview.png)
 
 ## Features
 

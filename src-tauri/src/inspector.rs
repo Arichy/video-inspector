@@ -10,7 +10,7 @@ pub struct VideoMetadata {
     frame_rate: String,
     duration: String,
     bit_rate: String,
-    thumbnail_base64: String, // 存储第一帧的 base64 编码
+    thumbnail_base64: String, // Store base64 encoding of the first frame
 }
 
 #[derive(Error, Debug)]
@@ -58,20 +58,20 @@ pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
                         .unwrap()
                         .as_nanos()
                 ));
-                // 执行 ffmpeg 命令提取第一帧
+                // Execute ffmpeg command to extract the first frame
                 let output = Command::new("ffmpeg")
                     .args([
                         "-i",
                         &path_clone,
                         "-vframes",
-                        "1", // 只取1帧
+                        "1", // Extract only 1 frame
                         "-f",
-                        "image2", // 输出为图像
+                        "image2", // Output as image
                         "-vf",
-                        "select=eq(n\\,0)", // 选择第一帧
+                        "select=eq(n\\,0)", // Select the first frame
                         "-q:v",
-                        "2",  // 高质量输出
-                        "-y", // 覆盖输出文件
+                        "2",  // High quality output
+                        "-y", // Overwrite output file
                         temp_image_path.to_str().unwrap(),
                     ])
                     .output();
@@ -79,14 +79,14 @@ pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
                 match output {
                     Ok(result) => {
                         if result.status.success() {
-                            // 读取生成的图片文件并转换为 base64
+                            // Read the generated image file and convert to base64
                             match fs::read(&temp_image_path) {
                                 Ok(image_data) => {
                                     let thumbnail_base64 =
                                         general_purpose::STANDARD.encode(&image_data);
 
                                     println!("{temp_image_path:?}");
-                                    // 清理临时文件
+                                    // Clean up temporary file
                                     let _ = fs::remove_file(&temp_image_path);
 
                                     Ok(VideoMetadata {

@@ -42,7 +42,7 @@ function App() {
           console.log(t('errors.fileAlreadyProcessed'), file);
           return;
         }
-        // 如果文件已经在处理列表中，直接返回
+        // If file is already in the processing list, return directly
 
         console.warn(t('errors.fileBeingProcessed'), file);
         return;
@@ -71,7 +71,7 @@ function App() {
   );
 
   const unlistenRef = React.useRef<() => void>();
-  // 监听 webview 内部的拖拽事件
+  // Listen for drag and drop events inside the webview
   useEffect(() => {
     (() => {
       getCurrentWebview()
@@ -95,7 +95,7 @@ function App() {
     })();
   }, [handleFileDrop, t]);
 
-  // 防止浏览器默认的文件打开行为
+  // Prevent browser's default file opening behavior
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.currentTarget.classList.add('bg-blue-100', 'border-blue-400');
@@ -110,31 +110,31 @@ function App() {
     e.preventDefault();
     e.currentTarget.classList.remove('bg-blue-100', 'border-blue-400');
     console.log('Drop event in React:', e);
-    // onDrop 已通过 Tauri 事件处理，这里仅用于视觉反馈
+    // onDrop is already handled by Tauri events, this is only for visual feedback
   };
 
-  // 处理删除视频
+  // Handle video deletion
   const handleDeleteVideo = (filePath: string) => {
     removeFile(filePath);
   };
 
-  // 处理重试处理视频
+  // Handle video processing retry
   const handleRetryVideo = async (filePath: string) => {
-    // 清除错误状态
+    // Clear error state
     setErrorMap(prevMap => {
       const newMap = { ...prevMap };
       delete newMap[filePath];
       return newMap;
     });
 
-    // 清除之前的元数据
+    // Clear previous metadata
     setMetadataMap(prevMap => {
       const newMap = { ...prevMap };
       delete newMap[filePath];
       return newMap;
     });
 
-    // 重新处理文件
+    // Reprocess the file
     try {
       const result = await invoke<VideoMetadata>('get_video_metadata', { path: filePath });
 
@@ -161,7 +161,7 @@ function App() {
           <p className="text-gray-600">{t('app.subtitle')}</p>
         </header>
 
-        {/* 主拖放区 */}
+        {/* Main drop zone */}
         <div
           className="border-2 border-dashed border-blue-300 rounded-lg p-8 mb-10 bg-blue-50
                     flex flex-col items-center justify-center cursor-pointer
@@ -201,7 +201,7 @@ function App() {
           <p className="mt-2 text-blue-500 text-sm">{t('dropzone.clickToSelect')}</p>
         </div>
 
-        {/* 视频卡片网格 */}
+        {/* Video card grid */}
         {files.length > 0 && (
           <div className="mt-6">
             <h2 className="text-xl font-semibold text-gray-700 mb-4">{t('video.processedVideos')} ({files.length})</h2>
@@ -224,7 +224,7 @@ function App() {
           </div>
         )}
 
-        {/* 没有文件时的提示 */}
+        {/* Message when no files are present */}
         {files.length === 0 && (
           <div className="text-center py-12 text-gray-500">
             <svg

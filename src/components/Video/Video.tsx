@@ -12,17 +12,17 @@ export default function Video({
   metadata: VideoMetadata | null;
   error: string | null;
   onDelete?: () => void;
-  onRetry?: (filePath: string) => void; // 如果需要重试功能，可以传入文件路径
+  onRetry?: (filePath: string) => void; // If retry functionality is needed, pass the file path
 }) {
   const { t } = useTranslation();
-  // 固定使用16:9的比例，不再需要动态计算
+  // Fixed 16:9 aspect ratio, no need for dynamic calculation
   const aspectRatio = '16/9';
 
-  // 错误状态
+  // Error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-8 max-w-md mx-auto rounded-lg bg-red-50 border border-red-200 shadow-md text-center relative">
-        {/* 删除按钮 */}
+        {/* Delete button */}
         {onDelete && (
           <button
             onClick={onDelete}
@@ -86,20 +86,20 @@ export default function Video({
     );
   }
 
-  // 加载状态
+  // Loading state
   if (!metadata) {
     return (
       <div className="w-full bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
         <div className="animate-pulse">
-          {/* 缩略图区域占位符 - 固定16:9比例 */}
+          {/* Thumbnail area placeholder - fixed 16:9 aspect ratio */}
           <div className="w-full bg-gray-200" style={{ aspectRatio }} />
 
-          {/* 信息区占位符 */}
+          {/* Information area placeholder */}
           <div className="p-4">
-            {/* 文件名占位符 */}
+            {/* Filename placeholder */}
             <div className="h-5 bg-gray-200 rounded w-3/4 mb-4" />
 
-            {/* 视频信息占位符 */}
+            {/* Video information placeholder */}
             <div className="grid grid-cols-2 gap-4">
               <div className="h-4 bg-gray-200 rounded" />
               <div className="h-4 bg-gray-200 rounded" />
@@ -114,12 +114,12 @@ export default function Video({
 
   return (
     <div className="w-full">
-      {/* 显示结果 */}
+      {/* Display results */}
       {metadata && (
         <div className="results relative">
-          {/* 视频卡片 */}
+          {/* Video card */}
           <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
-            {/* 删除按钮 */}
+            {/* Delete button */}
             {onDelete && (
               <button
                 onClick={onDelete}
@@ -186,12 +186,12 @@ export default function Video({
               </div>
             ) : (
               <div className="flex flex-col">
-                {/* 缩略图区域 - 固定16:9比例 */}
+                {/* Thumbnail area - fixed 16:9 aspect ratio */}
                 <div className="w-full bg-black flex items-center justify-center" style={{ aspectRatio }}>
                   <img src={metadata.thumbnail_base64} alt={t('video.thumbnail')} className="w-full h-full object-contain" />
                 </div>
 
-                {/* 信息区 */}
+                {/* Information area */}
                 <div className="w-full p-4 bg-gradient-to-b from-gray-50 to-white">
                   <h3 className="text-lg font-bold text-gray-800 mb-2 truncate" title={metadata.file_path}>
                     {metadata.file_path.split(/[\\/]/).pop()}

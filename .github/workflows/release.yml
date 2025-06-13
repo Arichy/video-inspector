@@ -15,8 +15,6 @@ jobs:
         include:
           - platform: 'macos-latest'
             args: '--target aarch64-apple-darwin'
-          - platform: 'macos-latest'
-            args: '--target x86_64-apple-darwin'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -30,37 +28,11 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
+          targets: aarch64-apple-darwin
 
-      - name: install FFmpeg (macOS - AARCH64)
-        if: matrix.args == '--target aarch64-apple-darwin'
+      - name: install FFmpeg (macOS)
         run: |
           brew install ffmpeg
-
-      - name: install Homebrew for x86_64 under Rosetta
-        if: matrix.args == '--target x86_64-apple-darwin'
-        run: |
-          # 检查 /usr/local/bin/brew 是否存在，如果不存在则安装
-          if ! test -d /usr/local/bin/brew; then
-            echo "Installing Homebrew for x86_64 under /usr/local"
-            arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          else
-            echo "Homebrew for x86_64 already installed in /usr/local"
-          fi
-          # 将 /usr/local/bin 和 /usr/local/sbin 添加到 PATH
-          echo "/usr/local/bin:/usr/local/sbin:$PATH" >> $GITHUB_ENV
-
-      - name: install FFmpeg (macOS - X86_64) via Rosetta
-        if: matrix.args == '--target x86_64-apple-darwin'
-        run: |
-          arch -x86_64 brew install ffmpeg
-          echo "PKG_CONFIG_PATH=/usr/local/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
-          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-
-      - name: fix pkg-config for macOS x86_64 cross-compilation
-        if: matrix.args == '--target x86_64-apple-darwin'
-        run: |
-          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
@@ -71,8 +43,6 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
-          PKG_CONFIG_ALLOW_CROSS: 1
         with:
           tagName: app-v__VERSION__
           releaseName: 'App v__VERSION__'

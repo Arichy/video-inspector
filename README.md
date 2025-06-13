@@ -23,6 +23,14 @@ A desktop application built with Tauri + React for quickly viewing video file me
 4. If processing fails, click the retry button to attempt reprocessing
 5. Click the delete button to remove videos from the interface
 
+## Fix App Broken
+
+I don't have the Apple developer account, so please fix it by following command:
+
+```shell
+xattr -cr /Applications/Video\ Inspector.app
+```
+
 ## Tech Stack
 
 ### Frontend

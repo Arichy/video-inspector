@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -88,7 +88,7 @@ function App() {
     [addFile, files, metadataMap, processFile, t]
   );
 
-  const unlistenRef = React.useRef<() => void>();
+  const unlistenRef = useRef<(() => void) | null>(null);
   // Listen for drag and drop events inside the webview
   useEffect(() => {
     (() => {
@@ -112,8 +112,6 @@ function App() {
         });
     })();
   }, [handleFileDrop, t]);
-
-
 
   // Handle video deletion
   const handleDeleteVideo = (filePath: string) => {
@@ -183,9 +181,7 @@ function App() {
             </svg>
             {t('upload.selectFile')}
           </button>
-          <p className="mt-3 text-gray-600 text-sm">
-            {t('upload.dragDropHint')}
-          </p>
+          <p className="mt-3 text-gray-600 text-sm">{t('upload.dragDropHint')}</p>
         </div>
 
         {/* Video card grid */}

@@ -128,9 +128,11 @@ If the script detects that files have different version numbers before the updat
 #### Automatic Mode (Default)
 The script automatically handles git operations:
 1. ✅ **Updates version files**
-2. ✅ **Stages changes** (`git add .`)
-3. ✅ **Commits changes** (`git commit -m "chore: bump version to vX.Y.Z"`)
-4. ✅ **Creates tag** (`git tag vX.Y.Z`)
+2. ✅ **Updates Cargo.lock** (`cargo check`)
+3. ✅ **Stages all changes** (`git add .`)
+4. ✅ **Commits changes** (`git commit -m "chore: bump version to vX.Y.Z"`)
+5. ✅ **Creates tag** (`git tag vX.Y.Z`)
+6. ✅ **Clean workspace** (no uncommitted changes)
 
 You only need to:
 ```bash

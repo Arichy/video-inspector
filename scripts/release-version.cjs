@@ -112,30 +112,15 @@ function updateCargoLock() {
 }
 
 /**
- * Add version-related files to git staging
+ * Add all changes to git staging
  */
-function addVersionFiles() {
-  const versionFiles = [
-    FILES.packageJson,
-    FILES.cargoToml,
-    FILES.tauriConf,
-    'src-tauri/Cargo.lock'  // Include Cargo.lock as it contains locked dependency versions
-  ];
-
-  for (const file of versionFiles) {
-    try {
-      // Check if file exists and has changes before adding
-      const statusOutput = execSync(`git status --porcelain "${file}"`, { encoding: 'utf8' });
-      if (statusOutput.trim()) {
-        execSync(`git add "${file}"`, { stdio: 'inherit' });
-        success(`Added ${file} to staging`);
-      } else {
-        info(`${file} - no changes to stage`);
-      }
-    } catch (error) {
-      // File might not exist or no changes, that's okay
-      info(`${file} - skipped (${error.message.split('\n')[0]})`);
-    }
+function addAllChanges() {
+  try {
+    info('Adding all changes to staging...');
+    execSync('git add .', { stdio: 'inherit' });
+    success('Added all changes to staging');
+  } catch (error) {
+    error(`Failed to add changes to staging: ${error.message}`);
   }
 }
 
@@ -172,10 +157,9 @@ function commitVersionChanges(newVersionStr) {
     warning('Git not available or not in a git repository. Skipping git operations.');
     log('\nManual steps:');
     log('1. Review the changes');
-    log(`2. Commit: git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json`);
-    log(`3. Commit: git commit -m "chore: bump version to v${newVersionStr}"`);
-    log(`4. Tag: git tag v${newVersionStr}`);
-    log('5. Push: git push && git push --tags\n');
+    log(`2. Commit: git add . && git commit -m "chore: bump version to v${newVersionStr}"`);
+    log(`3. Tag: git tag v${newVersionStr}`);
+    log('4. Push: git push && git push --tags\n');
     return;
   }
 
@@ -187,9 +171,8 @@ function commitVersionChanges(newVersionStr) {
   // Update Cargo.lock to reflect the new version in Cargo.toml
   updateCargoLock();
 
-  // Add version-related files including updated Cargo.lock
-  info('Adding version-related files to staging...');
-  addVersionFiles();
+  // Add all changes to staging (version files, Cargo.lock, and any other changes)
+  addAllChanges();
 
   // Check if we have staged changes
   if (!hasStagedChanges()) {
@@ -219,14 +202,7 @@ function commitVersionChanges(newVersionStr) {
 
   log('Final steps:');
   log('1. Push changes: git push');
-  log('2. Push tags: git push --tags');
-
-  // Show info about Cargo.lock
-  if (hasUncommittedChanges()) {
-    log('\n💡 Note: Other files (like Cargo.lock) remain unstaged.');
-    log('   This is intentional to keep version commits clean.');
-    log('   You can commit them separately if needed.\n');
-  }
+  log('2. Push tags: git push --tags\n');
 }
 
 /**
@@ -426,9 +402,10 @@ function main() {
     log('\n📝 Skipping git commit (--no-commit flag specified)\n');
     log('Manual steps:');
     log('1. Review the changes');
-    log(`2. Commit: git add . && git commit -m "chore: bump version to v${newVersionStr}"`);
-    log(`3. Tag: git tag v${newVersionStr}`);
-    log('4. Push: git push && git push --tags\n');
+    log(`2. Update Cargo.lock: cd src-tauri && cargo check`);
+    log(`3. Commit: git add . && git commit -m "chore: bump version to v${newVersionStr}"`);
+    log(`4. Tag: git tag v${newVersionStr}`);
+    log('5. Push: git push && git push --tags\n');
   }
 }
 

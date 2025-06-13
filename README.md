@@ -1,6 +1,6 @@
 # Video Metadata Inspector
 
-A desktop application built with Tauri + React for quickly viewing video file metadata and thumbnails.
+A desktop application built with Tauri + React for quickly viewing video file metadata and thumbnails. **FFmpeg is required for video processing, so please install it before using the application.**
 
 [中文文档](README.zh-CN.md)
 

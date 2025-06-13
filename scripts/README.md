@@ -16,14 +16,17 @@ The script updates version numbers in these three files:
 ### 🎯 Usage
 
 ```bash
-# Patch version bump (0.1.0 → 0.1.1)
+# Patch version bump (0.1.0 → 0.1.1) with auto-commit
 pnpm release-version patch
 
-# Minor version bump (0.1.0 → 0.2.0)
+# Minor version bump (0.1.0 → 0.2.0) with auto-commit
 pnpm release-version minor
 
-# Major version bump (0.1.0 → 1.0.0)
+# Major version bump (0.1.0 → 1.0.0) with auto-commit
 pnpm release-version major
+
+# Skip automatic git commit and tag (manual mode)
+pnpm release-version patch --no-commit
 ```
 
 ### 📋 Semantic Versioning
@@ -44,6 +47,7 @@ The script follows [Semantic Versioning](https://semver.org/) principles:
 
 ### 📝 Example Output
 
+#### With Auto-Commit (Default)
 ```bash
 $ pnpm release-version minor
 
@@ -62,11 +66,48 @@ Updating version in all files...
 🎉 Version bump completed!
 Updated from 0.1.0 to 0.2.0
 
-Next steps:
+📝 Committing version changes...
+
+ℹ️  Executing: git add .
+✅ Added all changes to staging
+ℹ️  Executing: git commit -m "chore: bump version to v0.2.0"
+✅ Committed version changes
+ℹ️  Executing: git tag v0.2.0
+✅ Created tag v0.2.0
+
+🏷️  Version v0.2.0 committed and tagged!
+
+Final steps:
+1. Push changes: git push
+2. Push tags: git push --tags
+```
+
+#### Manual Mode (--no-commit)
+```bash
+$ pnpm release-version minor --no-commit
+
+🚀 Video Inspector Version Bump
+Bump level: minor
+
+ℹ️  Current version: 0.1.0
+ℹ️  New version: 0.2.0
+
+Updating version in all files...
+
+✅ Updated package.json
+✅ Updated src-tauri/Cargo.toml
+✅ Updated src-tauri/tauri.conf.json
+
+🎉 Version bump completed!
+Updated from 0.1.0 to 0.2.0
+
+📝 Skipping git commit (--no-commit flag specified)
+
+Manual steps:
 1. Review the changes
-2. Commit the version bump: git add . && git commit -m "chore: bump version to v0.2.0"
-3. Create a tag: git tag v0.2.0
-4. Push changes: git push && git push --tags
+2. Commit: git add . && git commit -m "chore: bump version to v0.2.0"
+3. Tag: git tag v0.2.0
+4. Push: git push && git push --tags
 ```
 
 ### ⚠️ Version Mismatch Detection
@@ -81,12 +122,25 @@ If the script detects that files have different version numbers before the updat
 ⚠️  All files have been updated to the new version.
 ```
 
-### 🛠️ Manual Steps After Version Bump
+### 🛠️ Steps After Version Bump
 
-After running the script, follow these steps:
+#### Automatic Mode (Default)
+The script automatically handles git operations:
+1. ✅ **Updates version files**
+2. ✅ **Stages changes** (`git add .`)
+3. ✅ **Commits changes** (`git commit -m "chore: bump version to vX.Y.Z"`)
+4. ✅ **Creates tag** (`git tag vX.Y.Z`)
+
+You only need to:
+```bash
+git push && git push --tags
+```
+
+#### Manual Mode (--no-commit)
+After running with `--no-commit`, follow these steps:
 
 1. **Review Changes**: Check that all files were updated correctly
-2. **Commit Changes**: 
+2. **Commit Changes**:
    ```bash
    git add .
    git commit -m "chore: bump version to v1.0.0"
@@ -103,6 +157,9 @@ After running the script, follow these steps:
 ### 🔧 Script Features
 
 - ✅ **Cross-platform**: Works on macOS, Linux, and Windows
+- ✅ **Auto-commit**: Automatically commits and tags changes
+- ✅ **Manual mode**: Optional `--no-commit` flag for manual control
+- ✅ **Git detection**: Checks for git availability and repository status
 - ✅ **Error handling**: Validates input and file existence
 - ✅ **Colorful output**: Easy-to-read console messages
 - ✅ **Version validation**: Ensures proper semantic version format

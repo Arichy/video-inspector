@@ -8,10 +8,11 @@ The `release-version.cjs` script automatically updates version numbers in all re
 
 ### 📁 Files Updated
 
-The script updates version numbers in these three files:
+The script updates version numbers and commits these files:
 1. **`package.json`** - Frontend package version
-2. **`src-tauri/Cargo.toml`** - Rust backend package version  
+2. **`src-tauri/Cargo.toml`** - Rust backend package version
 3. **`src-tauri/tauri.conf.json`** - Tauri application version
+4. **`src-tauri/Cargo.lock`** - Locked dependency versions (auto-updated)
 
 ### 🎯 Usage
 
@@ -158,6 +159,7 @@ After running with `--no-commit`, follow these steps:
 
 - ✅ **Cross-platform**: Works on macOS, Linux, and Windows
 - ✅ **Auto-commit**: Automatically commits and tags changes
+- ✅ **Smart Cargo.lock handling**: Automatically updates and includes Cargo.lock
 - ✅ **Manual mode**: Optional `--no-commit` flag for manual control
 - ✅ **Git detection**: Checks for git availability and repository status
 - ✅ **Error handling**: Validates input and file existence
@@ -165,6 +167,20 @@ After running with `--no-commit`, follow these steps:
 - ✅ **Version validation**: Ensures proper semantic version format
 - ✅ **Atomic updates**: Updates all files or fails completely
 - ✅ **Helpful guidance**: Provides next steps after completion
+
+### 🔒 Cargo.lock Handling
+
+The script intelligently handles `Cargo.lock` updates:
+
+1. **After updating `Cargo.toml`**: Runs `cargo check` to update `Cargo.lock`
+2. **Includes in commit**: `Cargo.lock` is automatically staged and committed
+3. **Timing solution**: Eliminates the uncertainty of when `Cargo.lock` gets updated
+4. **Clean commits**: Ensures version commits include all related dependency changes
+
+This approach ensures that:
+- ✅ Version commits are complete and include locked dependency versions
+- ✅ No surprise `Cargo.lock` changes appear later
+- ✅ Builds are reproducible with the exact dependency versions
 
 ### 🚨 Error Handling
 

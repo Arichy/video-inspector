@@ -32,40 +32,35 @@ jobs:
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
 
-      # --- START OF FFmpeg FIX ---
       - name: install FFmpeg (macOS - AARCH64)
         if: matrix.args == '--target aarch64-apple-darwin'
         run: |
           brew install ffmpeg
 
+      - name: install Homebrew for x86_64 under Rosetta
+        if: matrix.args == '--target x86_64-apple-darwin'
+        run: |
+          # 检查 /usr/local/bin/brew 是否存在，如果不存在则安装
+          if ! test -d /usr/local/bin/brew; then
+            echo "Installing Homebrew for x86_64 under /usr/local"
+            arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          else
+            echo "Homebrew for x86_64 already installed in /usr/local"
+          fi
+          # 将 /usr/local/bin 和 /usr/local/sbin 添加到 PATH
+          echo "/usr/local/bin:/usr/local/sbin:$PATH" >> $GITHUB_ENV
+
       - name: install FFmpeg (macOS - X86_64) via Rosetta
         if: matrix.args == '--target x86_64-apple-darwin'
         run: |
-          # Create a separate Homebrew installation for x86_64 under Rosetta
-          # This ensures we get the x86_64 binaries for FFmpeg
-          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          # Add the x86_64 Homebrew to the PATH for the current step
-          echo "/usr/local/bin:/usr/local/sbin:$PATH" | sudo tee /etc/paths.d/brew_x86_64
-          # Install ffmpeg using the x86_64 Homebrew
           arch -x86_64 brew install ffmpeg
-          # Set PKG_CONFIG_PATH for the x86_64 Homebrew installation
-          echo "PKG_CONFIG_PATH=$(arch -x86_64 brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/usr/local/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
           echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-      # --- END OF FFmpeg FIX ---
 
       - name: fix pkg-config for macOS x86_64 cross-compilation
-        # This step might become redundant if the above step sets PKG_CONFIG_PATH correctly,
-        # but keeping it for robustness or if you have other pkg-config dependencies.
         if: matrix.args == '--target x86_64-apple-darwin'
         run: |
-          # If using the separate x86_64 brew installation, the PKG_CONFIG_PATH should point there.
-          # The previous step should have set this. This line might need adjustment.
-          # For example, if you set it with `arch -x86_64 brew --prefix` it'll already be correct.
-          # If not, you might need: echo "PKG_CONFIG_PATH=/usr/local/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
-          # or similar, depending on how `arch -x86_64 brew install` places it.
-          # The `PKG_CONFIG_PATH` set in the previous step should propagate.
           echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
@@ -76,8 +71,8 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }} # This should be picked up from GITHUB_ENV
-          PKG_CONFIG_ALLOW_CROSS: 1 # This is crucial for cross-compilation
+          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
+          PKG_CONFIG_ALLOW_CROSS: 1
         with:
           tagName: app-v__VERSION__
           releaseName: 'App v__VERSION__'

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "video-inspector",
+  "productName": "Video Inspector",
   "version": "0.1.0",
   "identifier": "com.arc.video-inspector",
   "build": {

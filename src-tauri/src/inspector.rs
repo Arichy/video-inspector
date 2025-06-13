@@ -1,7 +1,10 @@
 use base64::{engine::general_purpose, Engine};
 use ffmpeg_next::{self as ffmpeg};
-use std::{fs, process::Command, sync::Arc};
+use std::{fs, sync::Arc, time::Instant};
+use tauri_plugin_shell::ShellExt;
 use thiserror::Error;
+
+use crate::get_app_handle;
 
 #[derive(serde::Serialize, Clone)]
 pub struct VideoMetadata {
@@ -19,24 +22,46 @@ pub enum Error {
     SpawnBlockingError(tauri::Error),
     #[error("Failed to parse video: {0}")]
     MetadataError(ffmpeg::Error),
-    #[error("Could not create image buffer")]
-    ImageBufferError,
 }
 
 #[tauri::command]
 pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
+    let start_time = Instant::now();
+
+    tracing::info!(
+        video_path = %path,
+        event = "processing_start",
+        "Starting video metadata extraction"
+    );
+
     let path = Arc::new(path);
     let path_clone = Arc::clone(&path);
 
-    tauri::async_runtime::spawn_blocking(move || {
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        tracing::debug!(
+            video_path = %path_clone,
+            "Initializing FFmpeg"
+        );
+
         ffmpeg::init().expect("Failed to initialize FFmpeg");
 
         match ffmpeg::format::input(&*path_clone) {
             Ok(ictx) => {
-                let input_stream = ictx
-                    .streams()
-                    .best(ffmpeg::media::Type::Video)
-                    .ok_or(ffmpeg::Error::StreamNotFound)?;
+                tracing::debug!(
+                    video_path = %path_clone,
+                    "Successfully opened video file with FFmpeg"
+                );
+
+                let input_stream =
+                    ictx.streams()
+                        .best(ffmpeg::media::Type::Video)
+                        .ok_or_else(|| {
+                            tracing::error!(
+                                video_path = %path_clone,
+                                "No video stream found in file"
+                            );
+                            ffmpeg::Error::StreamNotFound
+                        })?;
 
                 let duration_sec = ictx.duration() as f64 / ffmpeg::ffi::AV_TIME_BASE as f64;
 
@@ -50,6 +75,16 @@ pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
                 let width = decoder.width();
                 let height = decoder.height();
 
+                tracing::debug!(
+                    video_path = %path_clone,
+                    width = width,
+                    height = height,
+                    duration_sec = duration_sec,
+                    bit_rate_kbps = bit_rate,
+                    frame_rate = format!("{:.2}", frame_rate.0 as f64 / frame_rate.1 as f64),
+                    "Extracted video metadata"
+                );
+
                 let temp_dir = std::env::temp_dir();
                 let temp_image_path = temp_dir.join(format!(
                     "thumbnail_{}.png",
@@ -58,34 +93,80 @@ pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
                         .unwrap()
                         .as_nanos()
                 ));
-                // Execute ffmpeg command to extract the first frame
-                let output = Command::new("ffmpeg")
-                    .args([
-                        "-i",
-                        &path_clone,
-                        "-vframes",
-                        "1", // Extract only 1 frame
-                        "-f",
-                        "image2", // Output as image
-                        "-vf",
-                        "select=eq(n\\,0)", // Select the first frame
-                        "-q:v",
-                        "2",  // High quality output
-                        "-y", // Overwrite output file
-                        temp_image_path.to_str().unwrap(),
-                    ])
-                    .output();
+
+                let ffmpeg_args = [
+                    "-i",
+                    &path_clone,
+                    "-vframes",
+                    "1", // Extract only 1 frame
+                    "-f",
+                    "image2", // Output as image
+                    "-vf",
+                    "select=eq(n\\,0)", // Select the first frame
+                    "-q:v",
+                    "2",  // High quality output
+                    "-y", // Overwrite output file
+                    temp_image_path.to_str().unwrap(),
+                ];
+
+                // Use FFmpeg command directly with Tauri shell plugin
+                let ffmpeg_command = "ffmpeg";
+
+                tracing::debug!(
+                    video_path = %path_clone,
+                    temp_path = %temp_image_path.display(),
+                    event = "ffmpeg_start",
+                    ffmpeg_command = ffmpeg_command,
+                    args = ?ffmpeg_args,
+                    "Starting FFmpeg command execution"
+                );
+
+                // Ensure temp directory exists
+                if let Err(e) = std::fs::create_dir_all(&temp_dir) {
+                    tracing::error!(
+                        temp_dir = %temp_dir.display(),
+                        error = %e,
+                        "Failed to create temp directory"
+                    );
+                    return Err(ffmpeg::Error::InvalidData);
+                }
+
+                let ffmpeg_start_time = Instant::now();
+
+                // Execute ffmpeg command to extract the first frame using Tauri shell plugin
+                let app_handle = get_app_handle()
+                    .ok_or(ffmpeg::Error::InvalidData)?;
+                let shell = app_handle.shell();
+
+                let output = tauri::async_runtime::block_on(async move {
+                    shell.command(ffmpeg_command).args(ffmpeg_args).output().await
+                });
 
                 match output {
                     Ok(result) => {
+                        let ffmpeg_duration = ffmpeg_start_time.elapsed().as_millis() as u64;
+
                         if result.status.success() {
+                            tracing::debug!(
+                                video_path = %path_clone,
+                                event = "ffmpeg_success",
+                                duration_ms = ffmpeg_duration,
+                                "FFmpeg command completed successfully"
+                            );
+
                             // Read the generated image file and convert to base64
                             match fs::read(&temp_image_path) {
                                 Ok(image_data) => {
                                     let thumbnail_base64 =
                                         general_purpose::STANDARD.encode(&image_data);
 
-                                    println!("{temp_image_path:?}");
+                                    tracing::debug!(
+                                        video_path = %path_clone,
+                                        thumbnail_size_bytes = image_data.len(),
+                                        temp_path = %temp_image_path.display(),
+                                        "Successfully generated and read thumbnail"
+                                    );
+
                                     // Clean up temporary file
                                     let _ = fs::remove_file(&temp_image_path);
 
@@ -106,26 +187,73 @@ pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
                                 }
                                 Err(e) => {
                                     let _ = fs::remove_file(&temp_image_path);
-                                    println!("Failed to read generated thumbnail: {}", e);
+                                    tracing::error!(
+                                        video_path = %path_clone,
+                                        error = %e,
+                                        temp_path = %temp_image_path.display(),
+                                        "Failed to read generated thumbnail file"
+                                    );
                                     Err(ffmpeg::Error::InvalidData)
                                 }
                             }
                         } else {
                             let stderr = String::from_utf8_lossy(&result.stderr);
-                            println!("FFmpeg command failed: {}", stderr);
+                            tracing::error!(
+                                video_path = %path_clone,
+                                event = "ffmpeg_error",
+                                stderr = %stderr,
+                                duration_ms = ffmpeg_duration,
+                                "FFmpeg command failed"
+                            );
                             Err(ffmpeg::Error::InvalidData)
                         }
                     }
                     Err(e) => {
-                        println!("Failed to execute ffmpeg command: {}", e);
+                        let ffmpeg_duration = ffmpeg_start_time.elapsed().as_millis() as u64;
+                        tracing::error!(
+                            video_path = %path_clone,
+                            error = %e,
+                            duration_ms = ffmpeg_duration,
+                            "Failed to execute FFmpeg command"
+                        );
                         Err(ffmpeg::Error::InvalidData)
                     }
                 }
             }
-            Err(e) => Err(e),
+            Err(e) => {
+                tracing::error!(
+                    video_path = %path_clone,
+                    error = %e,
+                    "Failed to open video file with FFmpeg"
+                );
+                Err(e)
+            }
         }
     })
     .await
-    .map_err(|e| Error::SpawnBlockingError(e).to_string())?
-    .map_err(|e| Error::MetadataError(e).to_string())
+    .map_err(|e| Error::SpawnBlockingError(e).to_string())?;
+
+    let total_duration = start_time.elapsed().as_millis() as u64;
+
+    match &result {
+        Ok(_) => {
+            tracing::info!(
+                video_path = %path,
+                event = "processing_success",
+                duration_ms = total_duration,
+                "Video metadata extraction completed successfully"
+            );
+        }
+        Err(e) => {
+            tracing::error!(
+                video_path = %path,
+                event = "processing_error",
+                error = %e,
+                duration_ms = total_duration,
+                "Video metadata extraction failed"
+            );
+        }
+    }
+
+    result.map_err(|e| Error::MetadataError(e).to_string())
 }

@@ -61,7 +61,10 @@ function warning(message) {
 function execGitCommand(command, description) {
   try {
     info(`Executing: ${command}`);
-    execSync(command, { stdio: 'inherit' });
+    execSync(command, {
+      stdio: 'inherit',
+      env: { ...process.env, GIT_PAGER: '' }  // Disable git pager
+    });
     success(description);
   } catch (error) {
     error(`Failed to ${description.toLowerCase()}: ${error.message}`);
@@ -117,7 +120,10 @@ function updateCargoLock() {
 function addAllChanges() {
   try {
     info('Adding all changes to staging...');
-    execSync('git add .', { stdio: 'inherit' });
+    execSync('git add .', {
+      stdio: 'inherit',
+      env: { ...process.env, GIT_PAGER: '' }  // Disable git pager
+    });
     success('Added all changes to staging');
   } catch (error) {
     error(`Failed to add changes to staging: ${error.message}`);
@@ -142,7 +148,10 @@ function hasStagedChanges() {
 function showGitStatus() {
   try {
     log('\n📋 Current git status:');
-    execSync('git status --short', { stdio: 'inherit' });
+    execSync('git status --short', {
+      stdio: 'inherit',
+      env: { ...process.env, GIT_PAGER: '' }  // Disable git pager
+    });
     log('');
   } catch (error) {
     warning('Could not show git status');
@@ -183,7 +192,10 @@ function commitVersionChanges(newVersionStr) {
   // Show what will be committed
   log('\n📋 Files to be committed:');
   try {
-    execSync('git diff --cached --name-only', { stdio: 'inherit' });
+    execSync('git diff --cached --name-only', {
+      stdio: 'inherit',
+      env: { ...process.env, GIT_PAGER: '' }  // Disable git pager
+    });
   } catch (error) {
     warning('Could not show staged files');
   }

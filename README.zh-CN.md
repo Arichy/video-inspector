@@ -1,6 +1,8 @@
 # 视频信息提取器 (Video Metadata Inspector)
 
-一个基于 Tauri + React 的桌面应用，用于快速查看视频文件的元数据和缩略图。
+一个基于 Tauri + React 的桌面应用，用于快速查看视频文件的元数据和缩略图。**应用需要 FFmpeg 来处理视频，请在使用前先安装 FFmpeg。**
+
+[English Documentation](README.md)
 
 ![Preview](./imgs/preview.png)
 

@@ -72,11 +72,14 @@ pnpm download-ffmpeg
 
 # 下载当前平台的 FFmpeg 二进制文件（推荐用于 CI/CD）
 pnpm prepare-ffmpeg:current
+
+# Windows 用户（如果上面的命令不工作）
+pnpm prepare-ffmpeg:current:win
 ```
 
 `pnpm prepare-ffmpeg` 命令会自动下载所有支持平台（macOS x86_64、macOS ARM64、Windows x86_64、Linux x86_64）的 FFmpeg 和 FFprobe 二进制文件，并为 Tauri sidecar 使用进行组织。
 
-对于 CI/CD 环境，你可以使用 `pnpm prepare-ffmpeg:current` 来自动检测并下载当前平台的二进制文件，这样更快更高效。
+对于 CI/CD 环境，你可以使用 `pnpm prepare-ffmpeg:current` 来自动检测并下载当前平台的二进制文件，这样更快更高效。在 Windows 上，如果遇到问题，请使用 `pnpm prepare-ffmpeg:current:win`。
 
 ### 手动安装 FFmpeg（可选）
 

@@ -87,6 +87,8 @@ pnpm prepare-ffmpeg:current:win
 - `pnpm prepare-ffmpeg:target <TARGET_TRIPLE>` 来下载特定目标平台的二进制文件（适用于交叉编译）
 - 在 Windows 上，如果遇到问题，请使用 `pnpm prepare-ffmpeg:current:win`
 
+**注意：** 下载脚本包含多个源和重试机制以确保可靠性。对于 Linux，它会首先尝试 GitHub releases（更快），然后回退到其他源。
+
 ### 手动安装 FFmpeg（可选）
 
 如果你更喜欢使用系统安装的 FFmpeg 而不是内置的二进制文件：

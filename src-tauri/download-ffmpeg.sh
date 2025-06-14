@@ -42,7 +42,12 @@ MACOS_FFPROBE_URL="https://evermeet.cx/ffmpeg/get/ffprobe/zip"
 MACOS_ARM64_FFMPEG_URL="https://www.osxexperts.net/ffmpeg6arm.zip"
 MACOS_ARM64_FFPROBE_URL="https://www.osxexperts.net/ffprobe6arm.zip"
 WINDOWS_URL="https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
-LINUX_URL="https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz"
+# Linux FFmpeg URLs (multiple sources for reliability)
+LINUX_URLS=(
+  "https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz"
+  "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz"
+  "https://github.com/yt-dlp/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz"
+)
 
 # Target triple mappings for Tauri sidecar naming
 get_target_triple() {
@@ -64,6 +69,36 @@ get_platform_from_target() {
     "x86_64-unknown-linux-gnu") echo "linux" ;;
     *) echo "unknown" ;;
   esac
+}
+
+# Download with retry mechanism and multiple sources
+download_with_retry() {
+  local output_file="$1"
+  shift
+  local urls=("$@")
+  local max_retries=2
+  local timeout=600  # 10 minutes timeout for large files
+
+  for url in "${urls[@]}"; do
+    echo "Trying to download from: $url"
+    for ((i=1; i<=max_retries; i++)); do
+      echo "Attempt $i/$max_retries..."
+      if curl -fL --progress-bar --connect-timeout 30 --max-time "$timeout" -o "$output_file" "$url"; then
+        echo "✓ Successfully downloaded from $url"
+        return 0
+      else
+        echo "✗ Failed to download from $url (attempt $i/$max_retries)"
+        if [ $i -lt $max_retries ]; then
+          echo "Retrying in 5 seconds..."
+          sleep 5
+        fi
+      fi
+    done
+    echo "All attempts failed for $url, trying next source..."
+  done
+
+  echo "❌ All download sources failed for $output_file"
+  return 1
 }
 
 # Auto-detect current platform target triple
@@ -299,14 +334,31 @@ download_linux() {
   # Change to script directory for temporary files
   cd "$SCRIPT_DIR"
 
-  echo "Downloading FFmpeg for Linux..."
-  curl -fL --progress-bar -o "ffmpeg-linux.tar.xz" "$LINUX_URL"
+  echo "Downloading FFmpeg for Linux with multiple sources and retry..."
+
+  # Try downloading from multiple sources
+  if download_with_retry "ffmpeg-linux.tar.xz" "${LINUX_URLS[@]}"; then
+    echo "Successfully downloaded Linux FFmpeg archive"
+  else
+    echo "❌ Failed to download Linux FFmpeg from all sources"
+    return 1
+  fi
 
   echo "Extracting archive..."
   mkdir -p "temp_linux"
-  tar -xf "ffmpeg-linux.tar.xz" -C "temp_linux"
 
-  # Find the bin directory
+  # Handle different archive formats
+  if [[ "ffmpeg-linux.tar.xz" == *.tar.xz ]]; then
+    tar -xf "ffmpeg-linux.tar.xz" -C "temp_linux"
+  elif [[ "ffmpeg-linux.tar.xz" == *linux-x64 ]]; then
+    # Handle single binary from eugeneware/ffmpeg-static
+    mv "ffmpeg-linux.tar.xz" "temp_linux/ffmpeg"
+    chmod +x "temp_linux/ffmpeg"
+    # Create a dummy ffprobe (some sources only provide ffmpeg)
+    cp "temp_linux/ffmpeg" "temp_linux/ffprobe" 2>/dev/null || true
+  fi
+
+  # Find the bin directory or binaries
   local bin_dir=$(find "temp_linux" -name "bin" -type d | head -1)
 
   if [ -z "$bin_dir" ]; then
@@ -335,7 +387,12 @@ download_linux() {
     chmod +x "$BASE_DIR/ffprobe-${target_triple}"
     echo "  ✓ ffprobe-${target_triple}"
   else
-    echo "  ⚠ ffprobe binary not found"
+    echo "  ⚠ ffprobe binary not found, trying to use ffmpeg as fallback"
+    if [ -f "$ffmpeg_bin" ]; then
+      cp "$ffmpeg_bin" "$BASE_DIR/ffprobe-${target_triple}"
+      chmod +x "$BASE_DIR/ffprobe-${target_triple}"
+      echo "  ✓ ffprobe-${target_triple} (using ffmpeg binary)"
+    fi
   fi
 
   # Clean up

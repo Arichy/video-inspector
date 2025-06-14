@@ -48,12 +48,14 @@ jobs:
 
       - name: download FFmpeg binaries for target platform (Unix)
         if: matrix.platform != 'windows-latest'
+        timeout-minutes: 15
         run: |
           chmod +x src-tauri/download-ffmpeg.sh
           ./src-tauri/download-ffmpeg.sh ${{ matrix.target }}
 
       - name: download FFmpeg binaries for target platform (Windows)
         if: matrix.platform == 'windows-latest'
+        timeout-minutes: 15
         run: |
           bash src-tauri/download-ffmpeg.sh ${{ matrix.target }}
 

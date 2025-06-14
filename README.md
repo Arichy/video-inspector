@@ -87,6 +87,8 @@ For development, you can use:
 - `pnpm prepare-ffmpeg:target <TARGET_TRIPLE>` to download binaries for a specific target (useful for cross-compilation)
 - On Windows, if you encounter issues, use `pnpm prepare-ffmpeg:current:win` instead
 
+**Note:** The download script includes multiple sources and retry mechanisms for reliability. For Linux, it will try GitHub releases first (faster) before falling back to other sources.
+
 ### Manual FFmpeg Installation (Alternative)
 
 If you prefer to use system-installed FFmpeg instead of bundled binaries:

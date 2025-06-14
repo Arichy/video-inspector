@@ -1,6 +1,6 @@
 # 视频信息提取器 (Video Metadata Inspector)
 
-一个基于 Tauri + React 的桌面应用，用于快速查看视频文件的元数据和缩略图。**应用需要 FFmpeg 来处理视频，请在使用前先安装 FFmpeg。**
+一个基于 Tauri + React 的桌面应用，用于快速查看视频文件的元数据和缩略图。本应用内置了 FFmpeg 二进制文件作为 sidecar，支持跨平台视频处理。
 
 [English Documentation](README.md)
 
@@ -54,19 +54,40 @@ xattr -cr /Applications/Video\ Inspector.app
 - [PNPM](https://pnpm.io/) (v10+)
 - [Rust](https://www.rust-lang.org/) (最新稳定版)
 - [Cargo](https://doc.rust-lang.org/cargo/) (随 Rust 一起安装)
-- FFmpeg
 
-### 安装依赖
+### 快速开始
 
 ```bash
+# 克隆仓库
+git clone <repository-url>
+cd video-inspector
+
 # 安装前端依赖
 pnpm install
 
+# 下载所有平台的 FFmpeg 二进制文件（推荐用于开发）
+pnpm prepare-ffmpeg
+# 或者使用
+pnpm download-ffmpeg
+
+# 下载当前平台的 FFmpeg 二进制文件（推荐用于 CI/CD）
+pnpm prepare-ffmpeg:current
+```
+
+`pnpm prepare-ffmpeg` 命令会自动下载所有支持平台（macOS x86_64、macOS ARM64、Windows x86_64、Linux x86_64）的 FFmpeg 和 FFprobe 二进制文件，并为 Tauri sidecar 使用进行组织。
+
+对于 CI/CD 环境，你可以使用 `pnpm prepare-ffmpeg:current` 来自动检测并下载当前平台的二进制文件，这样更快更高效。
+
+### 手动安装 FFmpeg（可选）
+
+如果你更喜欢使用系统安装的 FFmpeg 而不是内置的二进制文件：
+
+```bash
 # 安装 FFmpeg (macOS)
 brew install ffmpeg
 
 # 安装 FFmpeg (Ubuntu/Debian)
-# sudo apt update && sudo apt install ffmpeg
+sudo apt update && sudo apt install ffmpeg
 
 # 安装 FFmpeg (Windows)
 # 请参考 FFmpeg 官方文档

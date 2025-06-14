@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# FFmpeg binaries (downloaded by CI/CD)
+src-tauri/binaries/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

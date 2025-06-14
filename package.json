@@ -8,7 +8,10 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "release-version": "node scripts/release-version.cjs"
+    "release-version": "node scripts/release-version.cjs",
+    "prepare-ffmpeg": "chmod +x src-tauri/download-ffmpeg.sh && ./src-tauri/download-ffmpeg.sh",
+    "prepare-ffmpeg:current": "chmod +x src-tauri/download-ffmpeg.sh && ./src-tauri/download-ffmpeg.sh --current",
+    "download-ffmpeg": "chmod +x src-tauri/download-ffmpeg.sh && ./src-tauri/download-ffmpeg.sh"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.10",

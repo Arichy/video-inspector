@@ -1,6 +1,6 @@
 # Video Metadata Inspector
 
-A desktop application built with Tauri + React for quickly viewing video file metadata and thumbnails. **FFmpeg is required for video processing, so please install it before using the application.**
+A desktop application built with Tauri + React for quickly viewing video file metadata and thumbnails. This application includes FFmpeg binaries as sidecars for cross-platform video processing.
 
 [中文文档](README.zh-CN.md)
 
@@ -54,19 +54,40 @@ xattr -cr /Applications/Video\ Inspector.app
 - [PNPM](https://pnpm.io/) (v10+)
 - [Rust](https://www.rust-lang.org/) (latest stable)
 - [Cargo](https://doc.rust-lang.org/cargo/) (installed with Rust)
-- FFmpeg
 
-### Install Dependencies
+### Quick Setup
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd video-inspector
+
 # Install frontend dependencies
 pnpm install
 
+# Download FFmpeg binaries for all platforms (recommended for development)
+pnpm prepare-ffmpeg
+# or alternatively
+pnpm download-ffmpeg
+
+# Download FFmpeg binaries for current platform only (recommended for CI/CD)
+pnpm prepare-ffmpeg:current
+```
+
+The `pnpm prepare-ffmpeg` command will automatically download FFmpeg and FFprobe binaries for all supported platforms (macOS x86_64, macOS ARM64, Windows x86_64, Linux x86_64) and organize them for Tauri sidecar usage.
+
+For CI/CD environments, you can use `pnpm prepare-ffmpeg:current` to automatically detect and download binaries for the current platform only, which is faster and more efficient.
+
+### Manual FFmpeg Installation (Alternative)
+
+If you prefer to use system-installed FFmpeg instead of bundled binaries:
+
+```bash
 # Install FFmpeg (macOS)
 brew install ffmpeg
 
 # Install FFmpeg (Ubuntu/Debian)
-# sudo apt update && sudo apt install ffmpeg
+sudo apt update && sudo apt install ffmpeg
 
 # Install FFmpeg (Windows)
 # Please refer to the FFmpeg documentation

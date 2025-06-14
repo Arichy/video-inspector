@@ -70,8 +70,11 @@ pnpm prepare-ffmpeg
 # or alternatively
 pnpm download-ffmpeg
 
-# Download FFmpeg binaries for current platform only (recommended for CI/CD)
+# Download FFmpeg binaries for current platform only
 pnpm prepare-ffmpeg:current
+
+# Download FFmpeg binaries for specific target (useful for cross-compilation)
+pnpm prepare-ffmpeg:target x86_64-apple-darwin
 
 # For Windows users (if the above doesn't work)
 pnpm prepare-ffmpeg:current:win
@@ -79,7 +82,10 @@ pnpm prepare-ffmpeg:current:win
 
 The `pnpm prepare-ffmpeg` command will automatically download FFmpeg and FFprobe binaries for all supported platforms (macOS x86_64, macOS ARM64, Windows x86_64, Linux x86_64) and organize them for Tauri sidecar usage.
 
-For CI/CD environments, you can use `pnpm prepare-ffmpeg:current` to automatically detect and download binaries for the current platform only, which is faster and more efficient. On Windows, if you encounter issues, use `pnpm prepare-ffmpeg:current:win` instead.
+For development, you can use:
+- `pnpm prepare-ffmpeg:current` to automatically detect and download binaries for the current platform
+- `pnpm prepare-ffmpeg:target <TARGET_TRIPLE>` to download binaries for a specific target (useful for cross-compilation)
+- On Windows, if you encounter issues, use `pnpm prepare-ffmpeg:current:win` instead
 
 ### Manual FFmpeg Installation (Alternative)
 

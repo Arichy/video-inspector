@@ -46,13 +46,16 @@ jobs:
       - name: install frontend dependencies
         run: pnpm install
 
-      - name: download FFmpeg binaries for current platform (Unix)
+      - name: download FFmpeg binaries for target platform (Unix)
         if: matrix.platform != 'windows-latest'
-        run: pnpm prepare-ffmpeg:current
+        run: |
+          chmod +x src-tauri/download-ffmpeg.sh
+          ./src-tauri/download-ffmpeg.sh ${{ matrix.target }}
 
-      - name: download FFmpeg binaries for current platform (Windows)
+      - name: download FFmpeg binaries for target platform (Windows)
         if: matrix.platform == 'windows-latest'
-        run: pnpm prepare-ffmpeg:current:win
+        run: |
+          bash src-tauri/download-ffmpeg.sh ${{ matrix.target }}
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.

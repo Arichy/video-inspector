@@ -65,29 +65,13 @@ cd video-inspector
 # Install frontend dependencies
 pnpm install
 
-# Download FFmpeg binaries for all platforms (recommended for development)
+# Download FFmpeg binaries for current platform (local development)
 pnpm prepare-ffmpeg
-# or alternatively
-pnpm download-ffmpeg
-
-# Download FFmpeg binaries for current platform only
-pnpm prepare-ffmpeg:current
-
-# Download FFmpeg binaries for specific target (useful for cross-compilation)
-pnpm prepare-ffmpeg:target x86_64-apple-darwin
-
-# For Windows users (if the above doesn't work)
-pnpm prepare-ffmpeg:current:win
 ```
 
-The `pnpm prepare-ffmpeg` command will automatically download FFmpeg and FFprobe binaries for all supported platforms (macOS x86_64, macOS ARM64, Windows x86_64, Linux x86_64) and organize them for Tauri sidecar usage.
+The `pnpm prepare-ffmpeg` command will automatically detect your current platform and download the appropriate FFmpeg and FFprobe binaries for Tauri sidecar usage.
 
-For development, you can use:
-- `pnpm prepare-ffmpeg:current` to automatically detect and download binaries for the current platform
-- `pnpm prepare-ffmpeg:target <TARGET_TRIPLE>` to download binaries for a specific target (useful for cross-compilation)
-- On Windows, if you encounter issues, use `pnpm prepare-ffmpeg:current:win` instead
-
-**Note:** The download script includes multiple sources and retry mechanisms for reliability. For Linux, it will try GitHub releases first (faster) before falling back to other sources.
+**Note:** For CI/CD, the script accepts a target triple parameter to download platform-specific binaries (e.g., `./src-tauri/download-ffmpeg.sh x86_64-apple-darwin`).
 
 ### Manual FFmpeg Installation (Alternative)
 

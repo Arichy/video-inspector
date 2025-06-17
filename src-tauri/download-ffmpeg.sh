@@ -3,14 +3,12 @@
 # ==============================================================================
 # download-ffmpeg.sh
 #
-# This script downloads pre-compiled FFmpeg and FFprobe binaries for multiple
-# platforms from various sources, organizing them for use as Tauri sidecars
-# with proper target triple naming.
+# This script downloads pre-compiled FFmpeg and FFprobe binaries for Tauri
+# sidecars with proper target triple naming.
 #
 # Usage:
-#   ./download-ffmpeg.sh                    # Download all platforms
-#   ./download-ffmpeg.sh --current          # Auto-detect and download current platform
-#   ./download-ffmpeg.sh TARGET_TRIPLE      # Download specific platform
+#   ./download-ffmpeg.sh                    # Auto-detect current platform for local development
+#   ./download-ffmpeg.sh TARGET_TRIPLE      # Download specific platform for CI/CD
 #
 # Supported platforms:
 # - macOS x86_64 (x86_64-apple-darwin) - from evermeet.cx
@@ -21,7 +19,7 @@
 # Dependencies: curl, unzip, tar
 #
 # Author: Your Assistant
-# Version: 2.2.0
+# Version: 2.3.0
 # ==============================================================================
 
 # Exit immediately if a command exits with a non-zero status.
@@ -135,19 +133,8 @@ detect_current_target() {
 # Parse command line arguments
 TARGET_TRIPLE_ARG="$1"
 
-# Special flag to auto-detect current platform
-if [ "$TARGET_TRIPLE_ARG" = "--current" ] || [ "$TARGET_TRIPLE_ARG" = "-c" ]; then
-  TARGET_TRIPLE_ARG=$(detect_current_target)
-  if [ "$TARGET_TRIPLE_ARG" = "unknown" ]; then
-    echo "Error: Could not auto-detect current platform"
-    echo "Current OS: $(uname -s), Architecture: $(uname -m)"
-    echo "Please specify target triple manually or use no arguments to download all platforms"
-    exit 1
-  fi
-  echo "Auto-detected current platform: $TARGET_TRIPLE_ARG"
-fi
-
 if [ -n "$TARGET_TRIPLE_ARG" ]; then
+  # CI/CD mode: specific target provided
   PLATFORM=$(get_platform_from_target "$TARGET_TRIPLE_ARG")
   if [ "$PLATFORM" = "unknown" ]; then
     echo "Error: Unsupported target triple: $TARGET_TRIPLE_ARG"
@@ -156,13 +143,20 @@ if [ -n "$TARGET_TRIPLE_ARG" ]; then
     echo "  - aarch64-apple-darwin (macOS ARM64)"
     echo "  - x86_64-pc-windows-msvc (Windows x86_64)"
     echo "  - x86_64-unknown-linux-gnu (Linux x86_64)"
-    echo ""
-    echo "Use --current or -c to auto-detect current platform"
     exit 1
   fi
-  echo "Downloading FFmpeg for specific platform: $TARGET_TRIPLE_ARG ($PLATFORM)"
+  echo "CI/CD mode: Downloading FFmpeg for target: $TARGET_TRIPLE_ARG ($PLATFORM)"
 else
-  echo "Downloading FFmpeg for all platforms"
+  # Local development mode: auto-detect current platform
+  TARGET_TRIPLE_ARG=$(detect_current_target)
+  if [ "$TARGET_TRIPLE_ARG" = "unknown" ]; then
+    echo "Error: Could not auto-detect current platform"
+    echo "Current OS: $(uname -s), Architecture: $(uname -m)"
+    echo "Please specify target triple manually"
+    exit 1
+  fi
+  PLATFORM=$(get_platform_from_target "$TARGET_TRIPLE_ARG")
+  echo "Local development mode: Auto-detected current platform: $TARGET_TRIPLE_ARG ($PLATFORM)"
 fi
 echo ""
 
@@ -401,51 +395,26 @@ download_linux() {
   echo ""
 }
 
-# --- Download and process platforms ---
-if [ -n "$TARGET_TRIPLE_ARG" ]; then
-  # Download specific platform
-  case "$PLATFORM" in
-    "macos_x86") download_macos_x86 ;;
-    "macos_arm64") download_macos_arm64 ;;
-    "windows") download_windows ;;
-    "linux") download_linux ;;
-  esac
+# --- Download and process platform ---
+case "$PLATFORM" in
+  "macos_x86") download_macos_x86 ;;
+  "macos_arm64") download_macos_arm64 ;;
+  "windows") download_windows ;;
+  "linux") download_linux ;;
+esac
 
-  # Summary for single platform
-  echo "✅ FFmpeg and FFprobe binaries for $TARGET_TRIPLE_ARG have been downloaded!"
-  echo ""
-  echo "Downloaded binaries:"
-  echo "📁 $BASE_DIR/"
-  target_triple=$(get_target_triple "$PLATFORM")
-  if [ "$PLATFORM" = "windows" ]; then
-    echo "   ├── ffmpeg-${target_triple}.exe"
-    echo "   ├── ffprobe-${target_triple}.exe"
-  else
-    echo "   ├── ffmpeg-${target_triple}"
-    echo "   ├── ffprobe-${target_triple}"
-  fi
+# Summary
+echo "✅ FFmpeg and FFprobe binaries for $TARGET_TRIPLE_ARG have been downloaded!"
+echo ""
+echo "Downloaded binaries:"
+echo "📁 $BASE_DIR/"
+target_triple=$(get_target_triple "$PLATFORM")
+if [ "$PLATFORM" = "windows" ]; then
+  echo "   ├── ffmpeg-${target_triple}.exe"
+  echo "   ├── ffprobe-${target_triple}.exe"
 else
-  # Download all platforms
-  download_macos_x86
-  download_macos_arm64
-  download_windows
-  download_linux
-
-  # Summary for all platforms
-  echo "✅ All FFmpeg and FFprobe binaries have been downloaded and organized for Tauri sidecar usage!"
-  echo ""
-  echo "Downloaded binaries:"
-  echo "📁 $BASE_DIR/"
-  for platform in "macos_x86" "macos_arm64" "windows" "linux"; do
-    target_triple=$(get_target_triple "$platform")
-    if [ "$platform" = "windows" ]; then
-      echo "   ├── ffmpeg-${target_triple}.exe"
-      echo "   ├── ffprobe-${target_triple}.exe"
-    else
-      echo "   ├── ffmpeg-${target_triple}"
-      echo "   ├── ffprobe-${target_triple}"
-    fi
-  done
+  echo "   ├── ffmpeg-${target_triple}"
+  echo "   ├── ffprobe-${target_triple}"
 fi
 
 echo ""

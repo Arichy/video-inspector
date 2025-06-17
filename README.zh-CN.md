@@ -65,29 +65,13 @@ cd video-inspector
 # 安装前端依赖
 pnpm install
 
-# 下载所有平台的 FFmpeg 二进制文件（推荐用于开发）
+# 下载当前平台的 FFmpeg 二进制文件（本地开发）
 pnpm prepare-ffmpeg
-# 或者使用
-pnpm download-ffmpeg
-
-# 下载当前平台的 FFmpeg 二进制文件
-pnpm prepare-ffmpeg:current
-
-# 下载特定目标平台的 FFmpeg 二进制文件（适用于交叉编译）
-pnpm prepare-ffmpeg:target x86_64-apple-darwin
-
-# Windows 用户（如果上面的命令不工作）
-pnpm prepare-ffmpeg:current:win
 ```
 
-`pnpm prepare-ffmpeg` 命令会自动下载所有支持平台（macOS x86_64、macOS ARM64、Windows x86_64、Linux x86_64）的 FFmpeg 和 FFprobe 二进制文件，并为 Tauri sidecar 使用进行组织。
+`pnpm prepare-ffmpeg` 命令会自动检测你的当前平台并下载相应的 FFmpeg 和 FFprobe 二进制文件，用于 Tauri sidecar。
 
-对于开发环境，你可以使用：
-- `pnpm prepare-ffmpeg:current` 来自动检测并下载当前平台的二进制文件
-- `pnpm prepare-ffmpeg:target <TARGET_TRIPLE>` 来下载特定目标平台的二进制文件（适用于交叉编译）
-- 在 Windows 上，如果遇到问题，请使用 `pnpm prepare-ffmpeg:current:win`
-
-**注意：** 下载脚本包含多个源和重试机制以确保可靠性。对于 Linux，它会首先尝试 GitHub releases（更快），然后回退到其他源。
+**注意：** 对于 CI/CD，脚本接受目标三元组参数来下载特定平台的二进制文件（例如：`./src-tauri/download-ffmpeg.sh x86_64-apple-darwin`）。
 
 ### 手动安装 FFmpeg（可选）
 

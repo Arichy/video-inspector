@@ -23,6 +23,8 @@
     "frameRate": "Frame Rate",
     "duration": "Duration",
     "bitRate": "Bit Rate",
+    "fileSize": "File Size",
+    "fileHash": "File Hash",
     "fps": "fps"
   },
   "errors": {

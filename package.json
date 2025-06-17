@@ -16,6 +16,7 @@
     "download-ffmpeg": "chmod +x src-tauri/download-ffmpeg.sh && ./src-tauri/download-ffmpeg.sh"
   },
   "dependencies": {
+    "@tabler/icons-react": "^3.34.0",
     "@tailwindcss/vite": "^4.1.10",
     "@tauri-apps/api": "^2.5.0",
     "@tauri-apps/plugin-dialog": "~2.2.2",

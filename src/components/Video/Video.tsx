@@ -1,5 +1,6 @@
 import type { VideoMetadata } from '@/types';
 import { useTranslation } from 'react-i18next';
+import { IconX, IconAlertTriangle, IconRefresh, IconExclamationCircle } from '@tabler/icons-react';
 
 export default function Video({
   path,
@@ -15,8 +16,6 @@ export default function Video({
   onRetry?: (filePath: string) => void; // If retry functionality is needed, pass the file path
 }) {
   const { t } = useTranslation();
-  // Fixed 16:9 aspect ratio, no need for dynamic calculation
-  const aspectRatio = '16/9';
 
   // Error state
   if (error) {
@@ -29,32 +28,11 @@ export default function Video({
             className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition-colors duration-200 cursor-pointer"
             title={t('video.deleteVideo')}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <IconX className="h-5 w-5" />
           </button>
         )}
 
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-12 w-12 text-red-500 mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-          />
-        </svg>
+        <IconAlertTriangle className="h-12 w-12 text-red-500 mb-4" />
         <h2>{path}</h2>
         <h2 className="text-xl font-bold text-red-700 mb-2">{t('video.processingError')}</h2>
         <p className="text-red-600 mb-4">{error}</p>
@@ -65,20 +43,7 @@ export default function Video({
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors duration-200"
             title={t('video.retryProcessing')}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <IconRefresh className="h-5 w-5 mr-2" />
             {t('video.retry')}
           </button>
         )}
@@ -91,20 +56,28 @@ export default function Video({
     return (
       <div className="w-full bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
         <div className="animate-pulse">
-          {/* Thumbnail area placeholder - fixed 16:9 aspect ratio */}
-          <div className="w-full bg-gray-200" style={{ aspectRatio }} />
+          {/* Thumbnails area placeholder - 4 thumbnails in a row */}
+          <div className="w-full p-2">
+            <div className="grid grid-cols-4 gap-2">
+              {[...Array(4)].map((_, index) => (
+                <div key={index} className="bg-gray-300 rounded" style={{ aspectRatio: '16/9' }} />
+              ))}
+            </div>
+          </div>
 
           {/* Information area placeholder */}
           <div className="p-4">
             {/* Filename placeholder */}
-            <div className="h-5 bg-gray-200 rounded w-3/4 mb-4" />
+            <div className="h-5 bg-gray-200 rounded w-3/4 mb-3" />
 
-            {/* Video information placeholder */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Video information placeholder - 2 columns grid */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               <div className="h-4 bg-gray-200 rounded" />
               <div className="h-4 bg-gray-200 rounded" />
               <div className="h-4 bg-gray-200 rounded" />
               <div className="h-4 bg-gray-200 rounded" />
+              <div className="h-4 bg-gray-200 rounded" />
+              <div className="h-4 bg-gray-200 rounded col-span-2" />
             </div>
           </div>
         </div>
@@ -126,35 +99,14 @@ export default function Video({
                 className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition-colors duration-200 cursor-pointer"
                 title={t('video.deleteVideo')}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <IconX className="h-5 w-5" />
               </button>
             )}
 
             {metadata.error ? (
               <div className="p-6 bg-red-50 text-red-700">
                 <div className="flex items-center mb-3">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 mr-2 text-red-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  <IconExclamationCircle className="h-6 w-6 mr-2 text-red-500" />
                   <h3 className="font-bold text-lg">{t('video.fileProcessingFailed')}</h3>
                 </div>
                 <p className="mb-2 truncate">{metadata.file_path}</p>
@@ -166,45 +118,43 @@ export default function Video({
                     className="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded flex items-center justify-center transition-colors duration-200 mt-2"
                     title={t('video.retryProcessing')}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 mr-1"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
+                    <IconRefresh className="h-4 w-4 mr-1" />
                     {t('video.retry')}
                   </button>
                 )}
               </div>
             ) : (
               <div className="flex flex-col">
-                {/* Thumbnail area - fixed 16:9 aspect ratio */}
-                <div className="w-full bg-black flex items-center justify-center" style={{ aspectRatio }}>
-                  <img src={metadata.thumbnail_base64} alt={t('video.thumbnail')} className="w-full h-full object-contain" />
+                {/* Thumbnails area - 4 thumbnails in a row */}
+                <div className="w-full  p-2">
+                  <div className="grid grid-cols-4 gap-2">
+                    {metadata.thumbnails_base64.map((thumbnail, index) => (
+                      <div key={index} className="flex items-center justify-center">
+                        <img
+                          src={thumbnail}
+                          className="object-contain rounded-lg border-2 border-gray-200 hover:border-blue-400 hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer justify-self-center"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Information area */}
                 <div className="w-full p-4 bg-gradient-to-b from-gray-50 to-white">
-                  <h3 className="text-lg font-bold text-gray-800 mb-2 truncate" title={metadata.file_path}>
+                  <h3 className="text-lg font-bold text-gray-800 mb-3 truncate" title={metadata.file_path}>
                     {metadata.file_path.split(/[\\/]/).pop()}
                   </h3>
 
-                  <div className="space-y-2 text-gray-700 text-sm">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-gray-700 text-sm">
                     <div className="flex justify-between">
                       <span className="font-medium">{t('metadata.resolution')}:</span>
                       <span className="text-gray-600">{metadata.resolution}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-medium">{t('metadata.frameRate')}:</span>
-                      <span className="text-gray-600">{metadata.frame_rate} {t('metadata.fps')}</span>
+                      <span className="text-gray-600">
+                        {metadata.frame_rate} {t('metadata.fps')}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-medium">{t('metadata.duration')}:</span>
@@ -213,6 +163,16 @@ export default function Video({
                     <div className="flex justify-between">
                       <span className="font-medium">{t('metadata.bitRate')}:</span>
                       <span className="text-gray-600">{metadata.bit_rate}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">{t('metadata.fileSize')}:</span>
+                      <span className="text-gray-600">{metadata.file_size}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">{t('metadata.fileHash')}:</span>
+                      <span className="text-gray-600 font-mono text-xs truncate ml-2" title={metadata.file_hash}>
+                        {metadata.file_hash.substring(0, 16)}...
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -2,6 +2,7 @@ use base64::{engine::general_purpose, Engine};
 use std::{fs, time::Instant};
 use tauri_plugin_shell::ShellExt;
 use thiserror::Error;
+use sha2::{Sha256, Digest};
 
 use crate::get_app_handle;
 
@@ -12,7 +13,9 @@ pub struct VideoMetadata {
     frame_rate: String,
     duration: String,
     bit_rate: String,
-    thumbnail_base64: String, // Store base64 encoding of the first frame
+    file_size: String,
+    file_hash: String,
+    thumbnails_base64: Vec<String>, // Store base64 encoding of 4 thumbnails
 }
 
 #[derive(Error, Debug)]
@@ -72,8 +75,12 @@ async fn extract_video_metadata_async(path: &str) -> Result<VideoMetadata, Error
     // Get metadata using ffprobe (part of ffmpeg)
     let metadata = get_video_info_with_ffprobe(app_handle, path).await?;
 
-    // Generate thumbnail
-    let thumbnail_base64 = generate_thumbnail_with_ffmpeg(app_handle, path).await?;
+    // Calculate file size and hash
+    let file_size = get_file_size(path)?;
+    let file_hash = calculate_file_hash(path)?;
+
+    // Generate 4 thumbnails
+    let thumbnails_base64 = generate_thumbnails_with_ffmpeg(app_handle, path, &metadata).await?;
 
     Ok(VideoMetadata {
         file_path: path.to_string(),
@@ -81,7 +88,9 @@ async fn extract_video_metadata_async(path: &str) -> Result<VideoMetadata, Error
         frame_rate: format!("{:.2}", metadata.frame_rate),
         duration: format!("{:.2}s", metadata.duration),
         bit_rate: format!("{:.2} kbps", metadata.bit_rate / 1024.0),
-        thumbnail_base64: format!("data:image/png;base64,{}", thumbnail_base64),
+        file_size,
+        file_hash,
+        thumbnails_base64,
     })
 }
 
@@ -188,66 +197,83 @@ async fn get_video_info_with_ffprobe(
     })
 }
 
-/// Generate thumbnail using ffmpeg sidecar
-async fn generate_thumbnail_with_ffmpeg(
+/// Generate 4 thumbnails using ffmpeg sidecar
+async fn generate_thumbnails_with_ffmpeg(
     app_handle: &tauri::AppHandle,
     path: &str,
-) -> Result<String, Error> {
-    tracing::debug!(video_path = %path, "Generating thumbnail with ffmpeg");
+    video_info: &VideoInfo,
+) -> Result<Vec<String>, Error> {
+    tracing::debug!(video_path = %path, "Generating 4 thumbnails with ffmpeg");
 
     let temp_dir = std::env::temp_dir();
-    let temp_image_path = temp_dir.join(format!(
-        "thumbnail_{}.png",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ));
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
 
     // Ensure temp directory exists
     std::fs::create_dir_all(&temp_dir)?;
 
     let shell = app_handle.shell();
+    let mut thumbnails_base64 = Vec::new();
 
-    // Generate thumbnail using ffmpeg sidecar - extract first frame
-    let output = shell
-        .sidecar("ffmpeg")?
-        .args([
-            "-i", path,
-            "-vframes", "1",
-            "-vf", "select=eq(n\\,0)",
-            "-q:v", "2",
-            "-f", "image2",
-            "-y",
-            temp_image_path.to_str().unwrap(),
-        ])
-        .output()
-        .await
-        .map_err(|e| Error::FfmpegError(format!("Failed to execute ffmpeg: {}", e)))?;
+    // Calculate 4 time points evenly distributed across the video duration
+    let duration = video_info.duration;
+    let time_points = [
+        duration * 0.1,  // 10% into the video
+        duration * 0.3,  // 30% into the video
+        duration * 0.6,  // 60% into the video
+        duration * 0.9,  // 90% into the video
+    ];
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
+    for (i, time_point) in time_points.iter().enumerate() {
+        let temp_image_path = temp_dir.join(format!(
+            "thumbnail_{}_{}.png",
+            timestamp, i
+        ));
+
+        // Generate thumbnail at specific time point - optimized for speed
+        let output = shell
+            .sidecar("ffmpeg")?
+            .args([
+                "-ss", &format!("{:.2}", time_point),
+                "-i", path,
+                "-vframes", "1",
+                "-vf", "scale=480:270:force_original_aspect_ratio=decrease", // Smaller size for thumbnails
+                "-q:v", "2",
+                "-f", "image2",
+                "-y",
+                temp_image_path.to_str().unwrap(),
+            ])
+            .output()
+            .await
+            .map_err(|e| Error::FfmpegError(format!("Failed to execute ffmpeg: {}", e)))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let _ = fs::remove_file(&temp_image_path);
+            return Err(Error::FfmpegError(format!(
+                "ffmpeg thumbnail generation failed at time {:.2}s: {}",
+                time_point, stderr
+            )));
+        }
+
+        // Read the generated image file and convert to base64
+        let image_data = fs::read(&temp_image_path)?;
+        let thumbnail_base64 = general_purpose::STANDARD.encode(&image_data);
+        thumbnails_base64.push(format!("data:image/png;base64,{}", thumbnail_base64));
+
+        // Clean up temporary file
         let _ = fs::remove_file(&temp_image_path);
-        return Err(Error::FfmpegError(format!(
-            "ffmpeg thumbnail generation failed: {}",
-            stderr
-        )));
     }
-
-    // Read the generated image file and convert to base64
-    let image_data = fs::read(&temp_image_path)?;
-    let thumbnail_base64 = general_purpose::STANDARD.encode(&image_data);
-
-    // Clean up temporary file
-    let _ = fs::remove_file(&temp_image_path);
 
     tracing::debug!(
         video_path = %path,
-        thumbnail_size_bytes = image_data.len(),
-        "Successfully generated thumbnail"
+        thumbnails_count = thumbnails_base64.len(),
+        "Successfully generated thumbnails"
     );
 
-    Ok(thumbnail_base64)
+    Ok(thumbnails_base64)
 }
 
 /// Parse a fraction string like "30/1" to a float
@@ -276,4 +302,27 @@ fn parse_fraction(fraction_str: &str) -> Result<f64, Error> {
     Ok(numerator / denominator)
 }
 
+/// Get file size in human readable format
+fn get_file_size(path: &str) -> Result<String, Error> {
+    let metadata = fs::metadata(path)?;
+    let size_bytes = metadata.len();
 
+    if size_bytes < 1024 {
+        Ok(format!("{} B", size_bytes))
+    } else if size_bytes < 1024 * 1024 {
+        Ok(format!("{:.2} KB", size_bytes as f64 / 1024.0))
+    } else if size_bytes < 1024 * 1024 * 1024 {
+        Ok(format!("{:.2} MB", size_bytes as f64 / (1024.0 * 1024.0)))
+    } else {
+        Ok(format!("{:.2} GB", size_bytes as f64 / (1024.0 * 1024.0 * 1024.0)))
+    }
+}
+
+/// Calculate SHA256 hash of the file
+fn calculate_file_hash(path: &str) -> Result<String, Error> {
+    let file_data = fs::read(path)?;
+    let mut hasher = Sha256::new();
+    hasher.update(&file_data);
+    let result = hasher.finalize();
+    Ok(format!("{:x}", result))
+}

@@ -4,6 +4,8 @@ export interface VideoMetadata {
   frame_rate: string;
   duration: string;
   bit_rate: string;
-  thumbnail_base64: string;
+  file_size: string;
+  file_hash: string;
+  thumbnails_base64: string[];
   error?: string;
 }

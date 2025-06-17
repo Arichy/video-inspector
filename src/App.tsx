@@ -8,6 +8,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
 import { toast, ToastContainer } from 'react-toastify';
+import { IconUpload, IconFolder } from '@tabler/icons-react';
 
 function App() {
   const { t } = useTranslation();
@@ -139,96 +140,76 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <ToastContainer />
-      <LanguageSwitcher />
-      <div className="container mx-auto max-w-6xl">
-        <header className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">{t('app.title')}</h1>
-          <p className="text-gray-600">{t('app.subtitle')}</p>
-        </header>
+    <div className="min-h-screen bg-gray-100">
+      <div className="fixed top-0 left-0 right-0 h-8 z-10 bg-gray-50 border-b border-gray-200" data-tauri-drag-region="true" />
 
-        {/* Upload section */}
-        <div className="text-center mb-8">
-          <button
-            onClick={() => {
-              open({
-                multiple: false,
-                filters: [{ name: t('fileDialog.videoFiles'), extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'm4v'] }],
-              }).then(selectedFile => {
-                if (selectedFile) {
-                  handleFileDrop(selectedFile);
-                } else {
-                  console.warn(t('errors.noFileSelected'));
-                }
-              });
-            }}
-            className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-colors duration-200"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+      <div className="py-8 px-4 pt-12">
+        <ToastContainer />
+        <LanguageSwitcher />
+        <div className="container mx-auto max-w-6xl">
+          <header className="mb-8 text-center">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">{t('app.title')}</h1>
+            <p className="text-gray-600">{t('app.subtitle')}</p>
+          </header>
+
+          {/* Upload section */}
+          <div className="text-center mb-8">
+            <button
+              onClick={() => {
+                open({
+                  multiple: false,
+                  filters: [
+                    { name: t('fileDialog.videoFiles'), extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'm4v'] },
+                  ],
+                }).then(selectedFile => {
+                  if (selectedFile) {
+                    handleFileDrop(selectedFile);
+                  } else {
+                    console.warn(t('errors.noFileSelected'));
+                  }
+                });
+              }}
+              className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-colors duration-200 cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              />
-            </svg>
-            {t('upload.selectFile')}
-          </button>
-          <p className="mt-3 text-gray-600 text-sm">{t('upload.dragDropHint')}</p>
-        </div>
+              <IconUpload className="h-5 w-5 mr-2" />
+              {t('upload.selectFile')}
+            </button>
+            <p className="mt-3 text-gray-600 text-sm">{t('upload.dragDropHint')}</p>
+          </div>
 
-        {/* Video card grid */}
-        {files.length > 0 && (
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">
-              {t('video.processedVideos')} ({files.length})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {files.map(file => (
-                <div
-                  key={file}
-                  className="rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-                >
-                  <Video
-                    metadata={metadataMap[file]}
-                    error={errorMap[file]}
-                    onDelete={() => handleDeleteVideo(file)}
-                    onRetry={handleRetryVideo}
-                    path={file}
-                  />
-                </div>
-              ))}
+          {/* Video card grid */}
+          {files.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold text-gray-700 mb-4">
+                {t('video.processedVideos')} ({files.length})
+              </h2>
+              <div className="grid grid-cols-1 gap-6">
+                {files.map(file => (
+                  <div
+                    key={file}
+                    className="rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+                  >
+                    <Video
+                      metadata={metadataMap[file]}
+                      error={errorMap[file]}
+                      onDelete={() => handleDeleteVideo(file)}
+                      onRetry={handleRetryVideo}
+                      path={file}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Message when no files are present */}
-        {files.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 mx-auto text-gray-400 mb-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
-            <p>{t('video.noVideosYet')}</p>
-          </div>
-        )}
+          {/* Message when no files are present */}
+          {files.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              <IconFolder className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+              <p>{t('video.noVideosYet')}</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

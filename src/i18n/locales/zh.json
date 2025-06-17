@@ -23,6 +23,8 @@
     "frameRate": "帧率",
     "duration": "时长",
     "bitRate": "码率",
+    "fileSize": "文件大小",
+    "fileHash": "文件哈希",
     "fps": "fps"
   },
   "errors": {

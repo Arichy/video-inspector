@@ -1,8 +1,12 @@
 use base64::{engine::general_purpose, Engine};
-use std::{fs, time::Instant};
+use sha2::{Digest, Sha256};
+use std::{
+    fs,
+    sync::{Arc, Mutex},
+    time::Instant,
+};
 use tauri_plugin_shell::ShellExt;
 use thiserror::Error;
-use sha2::{Sha256, Digest};
 
 use crate::get_app_handle;
 
@@ -21,7 +25,7 @@ pub struct VideoMetadata {
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Failed to execute ffmpeg: {0}")]
-    FfmpegError(String),
+    FFmpegError(String),
     #[error("Failed to parse ffmpeg output: {0}")]
     ParseError(String),
     #[error("IO error: {0}")]
@@ -70,7 +74,7 @@ pub async fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
 /// Extract video metadata using ffmpeg sidecar
 async fn extract_video_metadata_async(path: &str) -> Result<VideoMetadata, Error> {
     let app_handle = get_app_handle()
-        .ok_or_else(|| Error::FfmpegError("App handle not available".to_string()))?;
+        .ok_or_else(|| Error::FFmpegError("App handle not available".to_string()))?;
 
     // Get metadata using ffprobe (part of ffmpeg)
     let metadata = get_video_info_with_ffprobe(app_handle, path).await?;
@@ -112,27 +116,30 @@ async fn get_video_info_with_ffprobe(
 
     let shell = app_handle.shell();
 
+    let start = Instant::now();
     // Use ffprobe to get video metadata in JSON format
     let output = shell
         .sidecar("ffprobe")?
         .args([
-            "-v", "quiet",
-            "-print_format", "json",
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
             "-show_format",
             "-show_streams",
-            "-select_streams", "v:0",
-            path
+            "-select_streams",
+            "v:0",
+            path,
         ])
         .output()
         .await
-        .map_err(|e| Error::FfmpegError(format!("Failed to execute ffprobe: {}", e)))?;
+        .map_err(|e| Error::FFmpegError(format!("Failed to execute ffprobe: {}", e)))?;
+
+    let elapsed = start.elapsed();
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(Error::FfmpegError(format!(
-            "ffprobe failed: {}",
-            stderr
-        )));
+        return Err(Error::FFmpegError(format!("ffprobe failed: {}", stderr)));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -140,6 +147,7 @@ async fn get_video_info_with_ffprobe(
     tracing::debug!(
         video_path = %path,
         ffprobe_output = %stdout,
+        elapsed = ?elapsed,
         "FFprobe JSON output"
     );
 
@@ -148,30 +156,37 @@ async fn get_video_info_with_ffprobe(
         .map_err(|e| Error::ParseError(format!("Failed to parse ffprobe JSON: {}", e)))?;
 
     // Extract video stream information
-    let streams = json["streams"].as_array()
+    let streams = json["streams"]
+        .as_array()
         .ok_or_else(|| Error::ParseError("No streams found in ffprobe output".to_string()))?;
 
-    let video_stream = streams.iter()
+    let video_stream = streams
+        .iter()
         .find(|stream| stream["codec_type"].as_str() == Some("video"))
         .ok_or_else(|| Error::ParseError("No video stream found".to_string()))?;
 
     // Extract metadata
-    let width = video_stream["width"].as_u64()
+    let width = video_stream["width"]
+        .as_u64()
         .ok_or_else(|| Error::ParseError("Width not found".to_string()))? as u32;
 
-    let height = video_stream["height"].as_u64()
+    let height = video_stream["height"]
+        .as_u64()
         .ok_or_else(|| Error::ParseError("Height not found".to_string()))? as u32;
 
     // Parse frame rate (can be a fraction like "30/1")
-    let frame_rate_str = video_stream["r_frame_rate"].as_str()
+    let frame_rate_str = video_stream["r_frame_rate"]
+        .as_str()
         .ok_or_else(|| Error::ParseError("Frame rate not found".to_string()))?;
     let frame_rate = parse_fraction(frame_rate_str)?;
 
     // Parse duration from format section
     let format = &json["format"];
-    let duration_str = format["duration"].as_str()
+    let duration_str = format["duration"]
+        .as_str()
         .ok_or_else(|| Error::ParseError("Duration not found".to_string()))?;
-    let duration: f64 = duration_str.parse()
+    let duration: f64 = duration_str
+        .parse()
         .map_err(|_| Error::ParseError("Invalid duration format".to_string()))?;
 
     // Parse bit rate
@@ -214,63 +229,97 @@ async fn generate_thumbnails_with_ffmpeg(
     // Ensure temp directory exists
     std::fs::create_dir_all(&temp_dir)?;
 
-    let shell = app_handle.shell();
-    let mut thumbnails_base64 = Vec::new();
+    // let shell = app_handle.shell();
+    let thumbnails_base64 = Arc::new(Mutex::new(Vec::new()));
 
     // Calculate 4 time points evenly distributed across the video duration
     let duration = video_info.duration;
     let time_points = [
-        duration * 0.1,  // 10% into the video
-        duration * 0.3,  // 30% into the video
-        duration * 0.6,  // 60% into the video
-        duration * 0.9,  // 90% into the video
+        duration * 0.1, // 10% into the video
+        duration * 0.3, // 30% into the video
+        duration * 0.6, // 60% into the video
+        duration * 0.9, // 90% into the video
     ];
 
-    for (i, time_point) in time_points.iter().enumerate() {
-        let temp_image_path = temp_dir.join(format!(
-            "thumbnail_{}_{}.png",
-            timestamp, i
-        ));
+    let start = Instant::now();
 
-        // Generate thumbnail at specific time point - optimized for speed
-        let output = shell
-            .sidecar("ffmpeg")?
-            .args([
-                "-ss", &format!("{:.2}", time_point),
-                "-i", path,
-                "-vframes", "1",
-                "-vf", "scale=480:270:force_original_aspect_ratio=decrease", // Smaller size for thumbnails
-                "-q:v", "2",
-                "-f", "image2",
-                "-y",
-                temp_image_path.to_str().unwrap(),
-            ])
-            .output()
+    // tauri::async_runtime::spawn(task)
+    let mut tasks = vec![];
+
+    for (i, &time_point) in time_points.iter().enumerate() {
+        let app_handle = app_handle.clone();
+        let path = path.to_string();
+        let temp_dir = temp_dir.clone();
+        let thumbnails_base64 = thumbnails_base64.clone();
+        tasks.push(tauri::async_runtime::spawn(async move {
+            let temp_image_path = temp_dir.join(format!("thumbnail_{}_{}.png", timestamp, i));
+
+            // Generate thumbnail at specific time point - optimized for speed
+            let temp_image_path_string = temp_image_path.to_str().unwrap().to_string();
+
+            let output = tauri::async_runtime::spawn_blocking(move || -> Result<_, Error> {
+                Ok(app_handle
+                    .shell()
+                    .sidecar("ffmpeg")
+                    .map_err(|e| Error::FFmpegError(format!("Failed to execute ffmpeg: {}", e)))?
+                    .args([
+                        "-ss",
+                        &format!("{:.2}", time_point),
+                        "-i",
+                        &path,
+                        "-vframes",
+                        "1",
+                        "-vf",
+                        "scale=480:270:force_original_aspect_ratio=decrease", // Smaller size for thumbnails
+                        "-q:v",
+                        "2",
+                        "-f",
+                        "image2",
+                        "-y",
+                        &temp_image_path_string,
+                    ])
+                    .output())
+            })
             .await
-            .map_err(|e| Error::FfmpegError(format!("Failed to execute ffmpeg: {}", e)))?;
+            .map_err(|e| Error::FFmpegError(format!("Failed to execute ffmpeg: {}", e)))??
+            .await?;
 
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                let _ = fs::remove_file(&temp_image_path);
+                return Err(Error::FFmpegError(format!(
+                    "ffmpeg thumbnail generation failed at time {:.2}s: {}",
+                    time_point, stderr
+                )));
+            }
+
+            // Read the generated image file and convert to base64
+            let image_data = fs::read(&temp_image_path)?;
+            let thumbnail_base64 = general_purpose::STANDARD.encode(&image_data);
+            {
+                let mut thumbnails_base64 = thumbnails_base64.lock().unwrap();
+                thumbnails_base64.push(format!("data:image/png;base64,{}", thumbnail_base64));
+            }
+
+            // Clean up temporary file
             let _ = fs::remove_file(&temp_image_path);
-            return Err(Error::FfmpegError(format!(
-                "ffmpeg thumbnail generation failed at time {:.2}s: {}",
-                time_point, stderr
-            )));
-        }
 
-        // Read the generated image file and convert to base64
-        let image_data = fs::read(&temp_image_path)?;
-        let thumbnail_base64 = general_purpose::STANDARD.encode(&image_data);
-        thumbnails_base64.push(format!("data:image/png;base64,{}", thumbnail_base64));
-
-        // Clean up temporary file
-        let _ = fs::remove_file(&temp_image_path);
+            Ok(())
+        }));
     }
+    for task in tasks {
+        let _ = task.await;
+    }
+
+    let elapsed = start.elapsed();
+
+    let thumbnails_base64 = thumbnails_base64.lock().unwrap().clone();
 
     tracing::debug!(
         video_path = %path,
         thumbnails_count = thumbnails_base64.len(),
-        "Successfully generated thumbnails"
+        "Successfully generated thumbnails in {:?}",
+        elapsed
     );
 
     Ok(thumbnails_base64)
@@ -314,7 +363,10 @@ fn get_file_size(path: &str) -> Result<String, Error> {
     } else if size_bytes < 1024 * 1024 * 1024 {
         Ok(format!("{:.2} MB", size_bytes as f64 / (1024.0 * 1024.0)))
     } else {
-        Ok(format!("{:.2} GB", size_bytes as f64 / (1024.0 * 1024.0 * 1024.0)))
+        Ok(format!(
+            "{:.2} GB",
+            size_bytes as f64 / (1024.0 * 1024.0 * 1024.0)
+        ))
     }
 }
 
